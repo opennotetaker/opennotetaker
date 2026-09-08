@@ -1,0 +1,36 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const __wbg_library_free: (a: number, b: number) => void;
+export const creditPricing: (a: number) => void;
+export const cueLanguages: (a: number) => void;
+export const diarize: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
+export const diarizeDefaults: (a: number) => void;
+export const excerptTranscript: (a: number, b: number, c: number, d: number, e: number) => void;
+export const exportFormats: (a: number) => void;
+export const exportTranscript: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
+export const formatClock: (a: number, b: number) => void;
+export const library_addNote: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+export const library_askPassages: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+export const library_new: () => number;
+export const library_passageCount: (a: number) => number;
+export const library_search: (a: number, b: number, c: number, d: number, e: number) => void;
+export const normaliseTranscript: (a: number, b: number, c: number) => void;
+export const parseClock: (a: number, b: number, c: number) => void;
+export const quoteAsk: (a: number, b: number, c: number, d: number, e: number) => void;
+export const quoteSummary: (a: number, b: number, c: number) => void;
+export const quoteTranslation: (a: number, b: number, c: number, d: number, e: number) => void;
+export const redactTranscript: (a: number, b: number, c: number, d: number, e: number) => void;
+export const redactionKinds: (a: number) => void;
+export const renderForModel: (a: number, b: number, c: number) => void;
+export const segmentAt: (a: number, b: number, c: number, d: number) => void;
+export const splitSegment: (a: number, b: number, c: number, d: number) => void;
+export const summariseLocally: (a: number, b: number, c: number, d: number, e: number) => void;
+export const summaryChunks: (a: number, b: number) => number;
+export const talkTime: (a: number, b: number, c: number) => void;
+export const transcriptFromChunks: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+export const translationBatchSize: () => number;
+export const __wbindgen_add_to_stack_pointer: (a: number) => number;
+export const __wbindgen_export: (a: number, b: number, c: number) => void;
+export const __wbindgen_export2: (a: number, b: number) => number;
+export const __wbindgen_export3: (a: number, b: number, c: number, d: number) => number;

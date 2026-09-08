@@ -1,0 +1,816 @@
+/* OpenNoteTaker's own layer, on top of the shared OpenApps tokens.
+ *
+ * The tokens give colour, type and spacing that match the rest of the suite.
+ * What is added here is the character this particular product needs, and it
+ * follows from what the product claims:
+ *
+ * - **Calm, not clever.** This is a tool people use while doing something
+ *   else -- a meeting is happening in the room. Nothing animates for
+ *   decoration, nothing moves that is not reporting real progress.
+ * - **Timestamps in tabular figures**, everywhere. A column of times that
+ *   jitters as the digits change is unreadable, and this app is largely a
+ *   column of times.
+ * - **The recording state is unmissable.** A red bar the page cannot hide is
+ *   the visual half of the consent argument: a product whose recording
+ *   indicator is subtle is making a different promise than this one.
+ */
+
+@import "@openapps/tokens/tokens.css";
+
+/* This product's accent is slot 21 (wine), registered in
+   tokens/ACCENT-SLOTS.md. Re-pointing the brand aliases rather than editing
+   call sites: every `var(--brand)` in this file keeps working, and the slot can
+   be changed centrally in one place.
+   
+   It used to inherit the system default, which is `--green` -- slot 1
+   verbatim, held by openreveal, and the same hue this app paints a *saved*
+   note in. An accent that cannot be told apart from a success state says the
+   wrong thing about whatever it tints.
+   
+   `--brand-contrast` flips to white: green is light enough to carry black
+   text, wine is not (3.4:1), and white on it is 6.2:1. */
+:root {
+  --accent: var(--accent-21);
+  --brand: var(--accent);
+  --brand-strong: color-mix(in oklab, var(--accent) 78%, var(--black));
+  --brand-soft: color-mix(in oklab, var(--accent) 10%, var(--white));
+  --brand-contrast: var(--white);
+  --text-brand: var(--accent);
+  /* "Selected" is defined suite-wide as a green tint, which is a foreign
+     colour on a page accented in wine -- and a 16% accent tint behind a
+     control is exactly what the accent rule permits. */
+  --surface-selected: color-mix(in oklab, var(--accent) 16%, transparent);
+
+  --edge: 1px solid var(--border-hairline);
+  --pad: var(--space-4);
+  --shell: 68rem;
+  --reading: 40rem;
+  /* Speaker colours. Chosen from the token accents rather than invented, and
+     ordered so the first two -- the overwhelmingly common case, a two-person
+     conversation -- are the furthest apart and both distinguishable under the
+     commonest colour-vision deficiencies. */
+  --speaker-0: var(--accent-1);
+  --speaker-1: var(--accent-4);
+  --speaker-2: var(--accent-6);
+  --speaker-3: var(--accent-2);
+  --speaker-4: var(--accent-7);
+  --speaker-5: var(--accent-3);
+  --speaker-6: var(--accent-8);
+  --speaker-7: var(--accent-5);
+}
+
+/* Dark mode re-points the same aliases, because the token file's own dark
+   blocks set them back to green. Both selectors, and both blocks, exactly as
+   colors.css does it -- adding one and not the other is how a surface goes
+   half-dark. */
+.oa-dark {
+  --surface-selected: color-mix(in oklab, var(--accent) 22%, transparent);
+  --brand-soft: color-mix(in oklab, var(--accent) 20%, transparent);
+  --text-brand: var(--accent-21);
+}
+@media (prefers-color-scheme: dark) {
+  .oa-auto {
+    --surface-selected: color-mix(in oklab, var(--accent) 22%, transparent);
+    --brand-soft: color-mix(in oklab, var(--accent) 20%, transparent);
+    --text-brand: var(--accent-21);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Checkboxes and radios are native on purpose -- they carry keyboard and
+   screen-reader behaviour that a styled div does not -- but the browser's
+   default blue is jarring beside the brand green, and in dark mode it is the
+   only saturated blue on the page. `accent-color` recolours the native control
+   without replacing it. */
+input[type="checkbox"],
+input[type="radio"],
+progress {
+  accent-color: var(--brand);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg-page);
+  color: var(--text-body);
+  font: var(--type-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Nothing here reflows when a number changes width. */
+time,
+.clock,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--text-link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+a:hover {
+  color: var(--text-link-hover);
+}
+
+h1,
+h2,
+h3 {
+  color: var(--text-strong);
+  margin: 0 0 var(--space-3);
+}
+h1 {
+  font: var(--type-h1);
+}
+h2 {
+  font: var(--type-h2);
+}
+h3 {
+  font: var(--type-h4);
+}
+
+p {
+  margin: 0 0 var(--space-3);
+  max-width: var(--reading);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+.faint {
+  color: var(--text-faint);
+}
+.small {
+  font-size: var(--text-sm);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* ------------------------------------------------------------------ shell */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--gutter-page);
+  background: color-mix(in srgb, var(--bg-page) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: var(--edge);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-medium);
+  color: var(--text-strong);
+  text-decoration: none;
+  letter-spacing: var(--tracking-heading);
+}
+.brand svg {
+  display: block;
+}
+
+nav.tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-inline-start: auto;
+  flex-wrap: wrap;
+}
+
+nav.tabs a {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+nav.tabs a:hover {
+  background: var(--surface-hover);
+  color: var(--text-body);
+}
+nav.tabs a[aria-current="page"] {
+  background: var(--surface-selected);
+  color: var(--text-strong);
+}
+
+/* The language switch sits in the header, not in settings: a reader who cannot
+   read the interface cannot navigate to a settings page to fix that. Sized to
+   its content so CJK and Latin option labels both fit without clipping. */
+select.lang {
+  width: auto;
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  background: transparent;
+  border-color: transparent;
+  margin-inline-start: var(--space-2);
+}
+select.lang:hover {
+  background: var(--surface-hover);
+  color: var(--text-body);
+  border-color: var(--border-hairline);
+}
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--shell);
+  margin: 0 auto;
+  padding: var(--space-8) var(--gutter-page) var(--space-16);
+}
+
+footer.site {
+  border-top: var(--edge);
+  padding: var(--space-6) var(--gutter-page);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+footer.site .row {
+  max-width: var(--shell);
+  margin: 0 auto;
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+/* --------------------------------------------------------------- controls */
+
+button,
+.button {
+  font: var(--type-ui);
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-h-md);
+  padding: 0 var(--space-4);
+  border: var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  color: var(--text-body);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+button:hover:not(:disabled),
+.button:hover {
+  background: var(--surface-hover);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+button.primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-contrast);
+  font-weight: var(--weight-medium);
+}
+button.primary:hover:not(:disabled) {
+  background: var(--brand-strong);
+  border-color: var(--brand-strong);
+}
+button.big {
+  height: var(--control-h-lg);
+  padding: 0 var(--space-6);
+  font-size: var(--text-md);
+}
+button.danger {
+  color: var(--danger-fg);
+  border-color: color-mix(in srgb, var(--danger-fg) 35%, transparent);
+}
+button.danger:hover:not(:disabled) {
+  background: var(--danger-bg);
+}
+button.quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+}
+button.quiet:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-body);
+}
+button.tiny {
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+}
+
+input[type="text"],
+input[type="search"],
+select,
+textarea {
+  font: var(--type-ui);
+  font-family: inherit;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  color: var(--text-body);
+}
+textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+  line-height: var(--leading-normal);
+}
+label.field {
+  display: block;
+  margin-bottom: var(--space-3);
+}
+label.field > span {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+}
+label.check {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  cursor: pointer;
+  padding: var(--space-2) 0;
+}
+label.check input {
+  margin-top: 0.2em;
+  flex: none;
+}
+label.check .hint {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.spread {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* ----------------------------------------------------------------- panels */
+
+.card {
+  border: var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  padding: var(--space-5);
+}
+.card + .card {
+  margin-top: var(--space-4);
+}
+.card > h2:first-child,
+.card > h3:first-child {
+  margin-top: 0;
+}
+
+.note {
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+}
+.note.info {
+  background: var(--info-bg);
+  color: var(--info-fg);
+}
+.note.warn {
+  background: var(--warning-bg);
+  color: var(--warning-fg);
+}
+.note.bad {
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+}
+.note.good {
+  background: var(--success-bg);
+  color: var(--success-fg);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--bg-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.grid2 {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+/* ------------------------------------------------------------- recording */
+
+/* Unmissable by design. See the file header: a recording indicator you have
+   to look for is a different promise than the one this product makes. */
+.recording-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--gutter-page);
+  background: var(--red-600);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.recording-bar .dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: #fff;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recording-bar .dot {
+    animation: none;
+  }
+}
+
+.meter {
+  height: 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+.meter > i {
+  display: block;
+  height: 100%;
+  background: var(--brand);
+  transition: width 90ms linear;
+}
+
+.progress {
+  height: 0.35rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+.progress > i {
+  display: block;
+  height: 100%;
+  background: var(--brand);
+  transition: width 200ms ease;
+}
+.progress.indeterminate > i {
+  width: 35%;
+  animation: slide 1.4s ease-in-out infinite;
+}
+@keyframes slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+/* ------------------------------------------------------------ transcript */
+
+.transcript {
+  display: flex;
+  flex-direction: column;
+}
+
+.line {
+  display: grid;
+  grid-template-columns: 4.2rem 1fr;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-md);
+  align-items: baseline;
+}
+.line:hover {
+  background: var(--surface-hover);
+}
+.line[data-playing="true"] {
+  background: var(--surface-selected);
+}
+.line .at {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  background: none;
+  border: none;
+  padding: 0;
+  height: auto;
+  justify-content: flex-start;
+  cursor: pointer;
+}
+.line .at:hover {
+  color: var(--text-link);
+  background: none;
+}
+.line .who {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  margin-inline-end: var(--space-2);
+}
+.line .said {
+  line-height: var(--leading-relaxed);
+  outline: none;
+}
+.line .said:focus {
+  background: var(--surface-card);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+.line .said[data-edited="true"]::after {
+  content: " ·";
+  color: var(--text-faint);
+}
+.line .tools {
+  opacity: 0;
+  display: inline-flex;
+  gap: var(--space-1);
+}
+.line:hover .tools,
+.line:focus-within .tools {
+  opacity: 1;
+}
+
+.speaker-legend {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.speaker-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: var(--edge);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+}
+.speaker-chip .swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  flex: none;
+}
+.speaker-chip input {
+  border: none;
+  background: none;
+  padding: 0;
+  width: 7rem;
+  font: inherit;
+  color: inherit;
+}
+
+/* ------------------------------------------------------------- library */
+
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.note-row {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border: var(--edge);
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  text-decoration: none;
+  color: inherit;
+}
+.note-row:hover {
+  background: var(--surface-hover);
+}
+.note-row .title {
+  font-weight: var(--weight-medium);
+  color: var(--text-strong);
+}
+.note-row .meta {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.note-row .grow {
+  flex: 1;
+  min-width: 0;
+}
+.note-row .title,
+.note-row .meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.hit {
+  padding: var(--space-3);
+  border-inline-start: 3px solid var(--brand-soft);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+.hit .where {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  display: block;
+  margin-bottom: 2px;
+}
+mark {
+  background: color-mix(in srgb, var(--amber-500) 40%, transparent);
+  color: inherit;
+  border-radius: 2px;
+}
+
+/* --------------------------------------------------------------- summary */
+
+.summary-lists ul {
+  margin: 0 0 var(--space-4);
+  padding-inline-start: var(--space-5);
+  line-height: var(--leading-relaxed);
+}
+.summary-lists li {
+  margin-bottom: var(--space-1);
+}
+.actions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+}
+.actions-list li {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  padding: var(--space-2) 0;
+  border-bottom: var(--edge);
+}
+.actions-list li:last-child {
+  border-bottom: none;
+}
+.actions-list .owner {
+  font-weight: var(--weight-medium);
+}
+.actions-list .due {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.price {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-medium);
+}
+
+details.reveal {
+  border: var(--edge);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background: var(--bg-subtle);
+}
+details.reveal > summary {
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+details.reveal[open] > summary {
+  margin-bottom: var(--space-3);
+}
+details.reveal pre {
+  margin: 0;
+  max-height: 22rem;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------- landing */
+
+.hero {
+  padding: var(--space-10) 0 var(--space-8);
+}
+.hero h1 {
+  font: var(--type-display);
+  max-width: 18ch;
+  margin-bottom: var(--space-4);
+}
+.hero .lede {
+  font-size: var(--text-lg);
+  color: var(--text-muted);
+  max-width: 46ch;
+}
+.claims {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  margin-top: var(--space-10);
+}
+.claims h3 {
+  margin-bottom: var(--space-2);
+}
+.claims p {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+table.plain {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+table.plain th,
+table.plain td {
+  text-align: start;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--edge);
+  vertical-align: top;
+}
+table.plain th {
+  color: var(--text-muted);
+  font-weight: var(--weight-medium);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 40rem) {
+  .line {
+    grid-template-columns: 3.4rem 1fr;
+  }
+  .hero {
+    padding-top: var(--space-6);
+  }
+}

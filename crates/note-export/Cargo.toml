@@ -1,0 +1,12 @@
+[package]
+name = "note-export"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Renders an OpenNoteTaker transcript as SRT, WebVTT, plain text, Markdown, JSON, CSV or HTML."
+
+[dependencies]
+note-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

@@ -1,0 +1,24 @@
+{
+  "name": { "message": "OpenNoteTaker — 會議偵測" },
+  "description": {
+    "message": "偵測到你正在參加 Google Meet、Zoom、Teams 或騰訊會議時，提示用 OpenNoteTaker 錄製。音訊始終留在本機。"
+  },
+  "promptTitle": {
+    "message": "你正在 $PLATFORM$ 會議中",
+    "placeholders": { "platform": { "content": "$1", "example": "Google Meet" } }
+  },
+  "promptBody": {
+    "message": "用 OpenNoteTaker 錄製並轉寫這場會議？不會上傳任何內容，也不會有機器人加入通話。"
+  },
+  "promptRecord": { "message": "錄製這場會議" },
+  "promptLater": { "message": "暫不" },
+  "promptNever": {
+    "message": "不要再在 $HOST$ 上提示",
+    "placeholders": { "host": { "content": "$1", "example": "meet.google.com" } }
+  },
+  "popupHeading": { "message": "目前開啟的會議" },
+  "popupEmpty": { "message": "沒有會議分頁。開啟 Google Meet、Zoom、Teams 或騰訊會議，這裡就會出現。" },
+  "popupRecord": { "message": "錄製" },
+  "popupSave": { "message": "儲存" },
+  "popupSaved": { "message": "已儲存" }
+}

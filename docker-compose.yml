@@ -1,0 +1,25 @@
+# The whole self-hosted deployment.
+#
+# One container, no database, no secrets. Everything the free tier does happens
+# in the visitor's browser; this serves the files it needs.
+#
+#   docker compose up --build
+#   open http://localhost:8088
+#
+# The first transcription downloads a Whisper model from Hugging Face into the
+# visitor's browser cache. After that the app works with no network at all --
+# which you can prove by pulling the plug, and which is the actual point.
+services:
+  opennotetaker:
+    build: .
+    ports:
+      - "8088:80"
+    restart: unless-stopped
+    # Nothing to persist. There is no server-side state: every recording,
+    # transcript and setting lives in the visitor's own browser storage.
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+    security_opt:
+      - no-new-privileges:true

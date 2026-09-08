@@ -1,0 +1,10 @@
+[package]
+name = "note-credits"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "What a paid OpenNoteTaker job costs, computed identically in the browser and in the gateway."
+
+[dependencies]
+serde = { workspace = true }

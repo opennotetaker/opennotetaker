@@ -1,0 +1,19 @@
+{
+  "name": "opennotetaker",
+  "private": true,
+  "license": "MIT OR Apache-2.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "build:wasm": "npm run build:wasm -w opennotetaker-web",
+    "dev": "npm run dev -w opennotetaker-web",
+    "build": "npm run build -w opennotetaker-web",
+    "typecheck": "npm run typecheck -w opennotetaker-web",
+    "smoke": "npm run smoke -w opennotetaker-web",
+    "test": "cargo test --workspace",
+    "test:extension": "npm test -w opennotetaker-extension",
+    "test:extension:e2e": "npm run test:e2e -w opennotetaker-extension",
+    "bilingual": "npm run bilingual -w opennotetaker-web"
+  }
+}

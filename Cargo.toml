@@ -1,0 +1,46 @@
+[workspace]
+resolver = "2"
+# Only crates that exist. Cargo refuses every command -- including `-p` for an
+# unrelated crate -- if any listed member's manifest is missing, so a member is
+# added in the same commit that creates its crate.
+members = [
+    "crates/note-core",
+    "crates/note-credits",
+    "crates/note-diarize",
+    "crates/note-export",
+    "crates/note-summary",
+    "crates/note-wasm",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/opentoolkitsg/opennotetaker"
+
+[workspace.dependencies]
+note-core = { path = "crates/note-core" }
+note-diarize = { path = "crates/note-diarize" }
+note-summary = { path = "crates/note-summary" }
+note-export = { path = "crates/note-export" }
+note-credits = { path = "crates/note-credits" }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+# Segmentation that is correct for CJK and Thai, where a space is not a word
+# boundary. The extractive summariser is a free, local feature and has to work
+# in all 99 languages Whisper transcribes, not only the ones with spaces.
+unicode-segmentation = "1"
+wasm-bindgen = "=0.2.126"
+
+# The browser build. `opt-level = "s"`: this workspace is arithmetic and string
+# work, and the size difference against "z" is small next to the cost of a slow
+# MFCC pass over an hour of audio.
+[profile.wasm-release]
+inherits = "release"
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

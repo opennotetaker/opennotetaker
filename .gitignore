@@ -1,0 +1,19 @@
+# Rust
+/target
+target/
+
+# Node
+node_modules/
+dist/
+
+# ONNX Runtime's binaries are copied in by scripts/copy-ort.mjs at build time
+# from the npm package. 100 MB of vendor wasm does not belong in history, and
+# a stale committed copy would silently outrank the one the build produces.
+apps/web/public/ort/
+
+# Deployment secrets, if any ever land here.
+*.env
+!*.env.example
+
+.DS_Store
+*.log

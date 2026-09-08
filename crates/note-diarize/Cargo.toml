@@ -1,0 +1,11 @@
+[package]
+name = "note-diarize"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Speaker separation for OpenNoteTaker: MFCC features, voice activity detection and agglomerative clustering, with no model to download."
+
+[dependencies]
+note-core = { workspace = true }
+serde = { workspace = true }

@@ -1,0 +1,32 @@
+{
+  "name": "opennotetaker-web",
+  "version": "0.1.0",
+  "description": "OpenNoteTaker: privacy-first meeting transcription that runs in the browser tab.",
+  "private": true,
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build:wasm": "bash scripts/build-wasm.sh",
+    "postinstall": "node scripts/copy-ort.mjs",
+    "prebuild": "node scripts/copy-ort.mjs",
+    "predev": "node scripts/copy-ort.mjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit && node scripts/check-locales.mjs",
+    "smoke": "npm run build:e2e && node e2e/smoke.mjs",
+    "build:e2e": "OPENNOTETAKER_E2E=1 vite build",
+    "bilingual": "npm run build:e2e && node e2e/bilingual.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
+    "@openapps/sdk": "file:../../../sdk/ts",
+    "@openapps/tokens": "file:../../../tokens",
+    "@openapps/ui": "file:../../../ui-elements"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}

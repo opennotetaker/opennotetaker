@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>OpenNoteTaker</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+        width: 320px; margin: 0; padding: 14px 16px;
+        background: #fff; color: #10131a;
+      }
+      h1 { font-size: 14px; margin: 0 0 10px; }
+      p { color: #4a5261; margin: 0 0 12px; }
+      ul { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+      li { display: flex; gap: 8px; align-items: center; justify-content: space-between;
+           border: 1px solid #d9dde5; border-radius: 10px; padding: 8px 10px; }
+      .who { min-width: 0; }
+      .who b { display: block; font-weight: 600; }
+      .who span { color: #6b7280; font-size: 12px; display: block;
+                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      button { font: inherit; border-radius: 8px; padding: 6px 10px; cursor: pointer;
+               border: 1px solid #10131a; background: #10131a; color: #fff; flex: none; }
+      .field { display: flex; gap: 6px; align-items: center; border-top: 1px solid #e6e9ef;
+               padding-top: 10px; }
+      input { font: inherit; flex: 1; min-width: 0; padding: 6px 8px; border-radius: 8px;
+              border: 1px solid #d9dde5; background: #fff; color: inherit; }
+      .field button { background: #fff; color: #10131a; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #171a21; color: #eef1f6; }
+        p, .who span { color: #a8b0bf; }
+        li, input { border-color: #2b303b; }
+        input { background: #1f232c; }
+        button { background: #eef1f6; color: #10131a; border-color: #eef1f6; }
+        .field { border-color: #2b303b; }
+        .field button { background: #1f232c; color: #eef1f6; border-color: #333a47; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="heading"></h1>
+    <ul id="list"></ul>
+    <p id="empty" hidden></p>
+    <div class="field">
+      <input id="app-url" type="url" spellcheck="false" />
+      <button id="save"></button>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+[package]
+name = "note-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The wasm-bindgen surface: everything OpenNoteTaker's browser app asks the Rust core to do."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+note-core = { workspace = true }
+note-credits = { workspace = true }
+note-diarize = { workspace = true }
+note-export = { workspace = true }
+note-summary = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+wasm-bindgen = { workspace = true }

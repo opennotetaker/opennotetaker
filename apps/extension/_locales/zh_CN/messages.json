@@ -1,0 +1,24 @@
+{
+  "name": { "message": "OpenNoteTaker — 会议检测" },
+  "description": {
+    "message": "检测到你正在参加 Google Meet、Zoom、Teams 或腾讯会议时，提示用 OpenNoteTaker 录制。音频始终留在本机。"
+  },
+  "promptTitle": {
+    "message": "你正在 $PLATFORM$ 会议中",
+    "placeholders": { "platform": { "content": "$1", "example": "Google Meet" } }
+  },
+  "promptBody": {
+    "message": "用 OpenNoteTaker 录制并转写这场会议？不上传任何内容，也不会有机器人加入通话。"
+  },
+  "promptRecord": { "message": "录制这场会议" },
+  "promptLater": { "message": "暂不" },
+  "promptNever": {
+    "message": "不再在 $HOST$ 上提示",
+    "placeholders": { "host": { "content": "$1", "example": "meet.google.com" } }
+  },
+  "popupHeading": { "message": "当前打开的会议" },
+  "popupEmpty": { "message": "没有会议标签页。打开 Google Meet、Zoom、Teams 或腾讯会议，这里就会出现。" },
+  "popupRecord": { "message": "录制" },
+  "popupSave": { "message": "保存" },
+  "popupSaved": { "message": "已保存" }
+}
