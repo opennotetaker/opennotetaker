@@ -16,7 +16,7 @@ members = [
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/opentoolkitsg/opennotetaker"
+repository = "https://github.com/opennotetaker/OpenNoteTaker"
 
 [workspace.dependencies]
 note-core = { path = "crates/note-core" }

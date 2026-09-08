@@ -1,10 +1,21 @@
+# Deliberately self-contained: no `workspace = true` inheritance anywhere.
+#
+# openapps-gateway path-depends on this crate so that the price it charges is
+# computed by the same code the browser quoted with. The gateway's Docker build
+# copies these crate directories on their own -- not this repo's workspace root
+# -- so a `version.workspace = true` here fails the image build with
+# "workspace not found", a long way from the file that caused it.
+#
+# Keep every value literal. The sibling crates that only ever build inside this
+# workspace (note-diarize, note-export, note-wasm) still inherit, and should.
+
 [package]
 name = "note-credits"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-repository.workspace = true
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/opennotetaker/OpenNoteTaker"
 description = "What a paid OpenNoteTaker job costs, computed identically in the browser and in the gateway."
 
 [dependencies]
-serde = { workspace = true }
+serde = { version = "1", features = ["derive"] }
