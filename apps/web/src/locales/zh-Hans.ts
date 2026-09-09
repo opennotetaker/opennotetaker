@@ -412,6 +412,7 @@ export const zhHans: Catalogue = {
   "privacy.secondLanguageHint":
     "两种语言都会侦听，每一段都用实际所说的那一种转写。指明语言可以避免检测跑到第三种去。",
   "run.listeningForLanguage": "正在辨识语言",
+  "run.rereading": "重新识别这 {seconds} 秒——识别器漏掉了",
   "privacy.languageHint": "Whisper 支持 99 种。除非它总是猜错，否则保持自动检测即可。",
   "privacy.translateToEnglish": "转录时同步译成英文",
   "privacy.translateHint":

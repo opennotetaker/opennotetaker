@@ -173,6 +173,24 @@ people costs 0.39 or more. Anything from 0.25 to 0.45 gives the same answer on
 every fixture, and the shipped 0.35 sits in the middle of that band. A constant
 that is only right at one value is a constant that is about to be wrong.
 
+**Three defences against the recogniser, all ported from OpenSubs.** They were
+measured there first, on real footage, and are properties of transformers.js
+rather than of either product: the gap re-reader (the pipeline drops spans when
+its window reconciliation fails, chaotically), the invented-segment test (a span
+over 12 s holding under 2 characters per second is a smear, not slow speech),
+and script normalisation. Sharing them is deliberate — the alternative is each
+product rediscovering the same measurements.
+
+**Language detection needed a floor, not a better model.** Reading Whisper's own
+language token per four-second cell is right, but it is an argmax with no
+abstain option, so silence votes. A 28-minute Chinese meeting came back with a
+wall of Thai in it. Two filters fixed it, both arithmetic: a quiet cell inherits
+its neighbours rather than voting, and a language is dropped unless it holds 4%
+of the recording or 25 seconds. Share rather than run length, because the
+bilingual fixture switches after 4.4 seconds and any length threshold that
+absorbs a flicker in a long meeting also absorbs a real half of a short one —
+that was tried, and it broke the fixture.
+
 **The subtitle and document exporters disagree on purpose.** SRT and WebVTT
 must preserve Whisper's cue boundaries exactly; a merged cue is a wall of text
 that outlasts the sentence. Text, Markdown and HTML must do the opposite,
@@ -242,7 +260,7 @@ calibration is checked on speech. The fixtures are macOS `say` voices, so they
 are regenerable and carry nobody's actual voice; `npm run smoke` runs the same
 one-speaker file through the wasm the app calls.
 
-`npm run smoke` — 69 checks, driving the real built bundle in a real Chromium.
+`npm run smoke` — 83 checks, driving the real built bundle in a real Chromium.
 It stubs transcription at the one seam where model output enters the app,
 because downloading hundreds of megabytes per CI run to test somebody else's
 inference engine is not a test of this application. Everything downstream of

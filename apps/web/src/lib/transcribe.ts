@@ -22,6 +22,7 @@
 // good enough, the interface says so plainly rather than upselling.
 
 import { TARGET_SAMPLE_RATE } from "./decode";
+import { isChinese, toSimplified, wantsTraditional } from "./script";
 import { t } from "./i18n";
 
 export interface TranscribeModel {
@@ -235,6 +236,73 @@ const LEAD_OUT_S = 3;
 const CHUNK_LENGTH_S = 30;
 const STRIDE_LENGTH_S = 5;
 
+/// How quiet a cell has to be, against the loudest cell in the recording,
+/// before its vote is thrown away.
+///
+/// A cell of silence still gets a language: the detector reads the token after
+/// `<|startoftranscript|>`, and that is an argmax over ninety-nine candidates
+/// with no "none of these" among them. On a 28-minute meeting the pauses
+/// therefore vote, at random, and a couple of them agreeing is enough to open a
+/// transcription pass in a language nobody spoke -- which Whisper then fills
+/// with invented text, because a language model asked to transcribe silence in
+/// Thai writes Thai. That is where "OK ที่นี่ ที่นี่นี่ ทุกคน..." came from.
+///
+/// -34 dBFS against the recording's own peak, so it adapts to how hot the
+/// recording was rather than assuming a level.
+const QUIET_CELL_RATIO = 0.0004;
+
+/// What share of the recording a language must hold to be believed, and the
+/// floor below which no amount of share is enough.
+///
+/// Length alone cannot decide this, and trying it was wrong: the bilingual
+/// fixture switches after **4.4 seconds** of a 29-second file, so any threshold
+/// high enough to absorb a flicker in a 28-minute meeting also absorbs a real
+/// half of a short one. Share is the property that separates them. Those 4.4
+/// seconds are 15% of their recording; the invented Thai was some 8 seconds of
+/// 1,680, which is 0.5%.
+///
+/// Both conditions have to fail before a language is dropped, so a genuinely
+/// brief switch inside a long meeting -- one sentence in Chinese, thirty
+/// seconds of it -- is kept on the absolute floor even though its share is
+/// small.
+const STRAY_LANGUAGE_SHARE = 0.04;
+const STRAY_LANGUAGE_S = 25;
+
+// ---------------------------------------------------------------------------
+// Recovering what the pipeline drops, and refusing what it invents.
+//
+// Both ported from OpenSubs, which measured them first on real footage. They
+// are properties of this recogniser rather than of either product, and the
+// second one is the reason a 28-minute meeting came back with stretches
+// missing that a listener can plainly hear.
+// ---------------------------------------------------------------------------
+
+/// No single spoken segment worth one line runs longer than this.
+const MAX_SEGMENT_S = 12;
+/// Slower than this is not speech, whatever the timestamps claim.
+///
+/// The pair is a hallucination test: a segment spanning half a minute with
+/// four words in it is not a slow speaker, it is the model having smeared a
+/// guess across a span it could not read.
+const MIN_CHARS_PER_SECOND = 2;
+
+/// A stretch of speech with no transcript over it is worth reading again.
+const GAP_S = 4;
+/// Past this, the gap is not a recogniser slip and re-reading it is not cheap.
+const MAX_GAP_S = 60;
+/// At most this many second readings, however many gaps there turn out to be.
+const MAX_REFILLS = 30;
+/// ...but no more than one re-read per this many seconds of audio, so the
+/// budget scales with the file rather than being generous for a short one and
+/// ruinous for a long one.
+const REFILL_SECONDS_EACH = 20;
+/// And at most this many rounds, so a stubborn gap cannot loop.
+const MAX_REFILL_ROUNDS = 4;
+/// How loud a gap must be, against the whole recording, to be worth re-reading.
+/// Most gaps are real: a pause, a held silence. Only the ones with someone
+/// talking in them are a failure.
+const GAP_SPEECH_RATIO = 0.15;
+
 /// A stretch of the recording that is all one language.
 export interface LanguageRun {
   /// Sample offsets into the decoded audio.
@@ -315,6 +383,136 @@ export function smoothLabels(labels: string[]): string[] {
     if (out[i] !== out[i - 1] && out[i - 1] === out[i + 1]) out[i] = out[i - 1]!;
   }
   return out;
+}
+
+/// Mean square energy per detection cell.
+///
+/// Exported so the silence gate can be tested without a model: it is arithmetic
+/// over the same buffer the detector reads.
+export function cellEnergies(audio: Float32Array, cell: number): number[] {
+  const out: number[] = [];
+  for (let at = 0; at < audio.length; at += cell) {
+    const end = Math.min(at + cell, audio.length);
+    let sum = 0;
+    // Every fourth sample: this decides a threshold, not a measurement, and
+    // reading a quarter of a 28-minute recording is four times less work.
+    for (let i = at; i < end; i += 4) sum += audio[i]! * audio[i]!;
+    const n = Math.max(1, Math.ceil((end - at) / 4));
+    out.push(sum / n);
+  }
+  return out;
+}
+
+/// Replace the labels of cells too quiet to have carried speech.
+///
+/// A quiet cell inherits the nearest loud one rather than voting. Its own vote
+/// is an argmax over ninety-nine languages on noise, and two such cells landing
+/// on the same wrong answer is all it takes to open a transcription pass in a
+/// language nobody spoke.
+export function silenceInherits(labels: string[], energies: number[]): string[] {
+  const peak = Math.max(...energies, 0);
+  if (!(peak > 0)) return [...labels];
+  const floor = peak * QUIET_CELL_RATIO;
+  const loud = labels.map((_, i) => (energies[i] ?? 0) >= floor);
+  // Nothing above the floor: the recording is silence, and there is no
+  // neighbour to inherit from. Leave it alone rather than inventing agreement.
+  if (!loud.some(Boolean)) return [...labels];
+
+  const out = [...labels];
+  for (let i = 0; i < out.length; i += 1) {
+    if (loud[i]) continue;
+    let back = i - 1;
+    while (back >= 0 && !loud[back]) back -= 1;
+    let forward = i + 1;
+    while (forward < out.length && !loud[forward]) forward += 1;
+    // Whichever side is nearer; the earlier one on a tie, so a quiet stretch
+    // between two languages stays with the one that was already being spoken.
+    const nearer =
+      back < 0 ? forward : forward >= out.length ? back : i - back <= forward - i ? back : forward;
+    out[i] = labels[nearer]!;
+  }
+  return out;
+}
+
+/// Drop languages that hold too little of the recording to be real.
+///
+/// Detection noise does not arrive as one long stretch; it arrives as a flicker
+/// somewhere in the middle of a meeting held in something else. Left alone each
+/// flicker opens its own transcription pass, and Whisper fills that pass with
+/// invented text in the language it was told to expect — which is how a wall of
+/// Thai reached a Chinese meeting's transcript.
+///
+/// Judged per *language* over the whole recording rather than per run, because
+/// a language spoken for a real but brief stretch is credible and the same
+/// number of seconds scattered as three flickers is not.
+export function absorbStrayLanguages(
+  runs: LanguageRun[],
+  totalSamples: number,
+  shareFloor = STRAY_LANGUAGE_SHARE,
+  absoluteFloorSamples = STRAY_LANGUAGE_S * TARGET_SAMPLE_RATE,
+): LanguageRun[] {
+  if (runs.length < 2 || totalSamples <= 0) return runs.map((run) => ({ ...run }));
+
+  const held = new Map<string, number>();
+  for (const run of runs) {
+    held.set(run.language, (held.get(run.language) ?? 0) + (run.to - run.from));
+  }
+  const stray = new Set(
+    [...held]
+      .filter(([, samples]) => samples / totalSamples < shareFloor && samples < absoluteFloorSamples)
+      .map(([language]) => language),
+  );
+  // Never drop every language: if the whole recording reads as noise, the
+  // detection was wrong about something other than which parts to keep.
+  if (stray.size === 0 || stray.size === held.size) return runs.map((run) => ({ ...run }));
+
+  const kept: LanguageRun[] = [];
+  for (const run of runs) {
+    if (stray.has(run.language)) {
+      // Hand the span to whichever surviving neighbour is longer: that is the
+      // language more likely to have been spoken through it.
+      const before = kept[kept.length - 1];
+      const after = runs.find((other) => other.from >= run.to && !stray.has(other.language));
+      if (before && (!after || before.to - before.from >= after.to - after.from)) {
+        before.to = run.to;
+      } else if (after) {
+        after.from = Math.min(after.from, run.from);
+      } else if (before) {
+        before.to = run.to;
+      }
+      continue;
+    }
+    const last = kept[kept.length - 1];
+    if (last && last.language === run.language) last.to = run.to;
+    else kept.push({ ...run });
+  }
+  // A stray run at the very start leaves a hole; the first survivor takes it.
+  if (kept.length > 0) {
+    kept[0]!.from = Math.min(kept[0]!.from, runs[0]!.from);
+    kept[kept.length - 1]!.to = Math.max(kept[kept.length - 1]!.to, runs[runs.length - 1]!.to);
+  }
+  return kept;
+}
+
+/// Whether a segment reads as something the model invented rather than heard.
+///
+/// Whisper smears a guess across a span it could not read: a long stretch
+/// holding very little text. Applied both to a first reading and to what a
+/// re-read brings back, because a re-read can smear exactly as the first did —
+/// and one that does must not be kept, or it fills the gap with nonsense and
+/// stops the next round retrying the span.
+export function looksInvented(text: string, seconds: number): boolean {
+  return seconds > MAX_SEGMENT_S && text.length / seconds < MIN_CHARS_PER_SECOND;
+}
+
+/// RMS between two times, in seconds.
+export function loudness(audio: Float32Array, from: number, to: number): number {
+  const a = Math.max(0, Math.round(from * TARGET_SAMPLE_RATE));
+  const b = Math.min(audio.length, Math.round(to * TARGET_SAMPLE_RATE));
+  if (b <= a) return 0;
+  let sum = 0;
+  for (let i = a; i < b; i += 1) sum += audio[i]! * audio[i]!;
+  return Math.sqrt(sum / (b - a));
 }
 
 /// Merge a grid of per-cell labels into stretches.
@@ -428,7 +626,14 @@ async function languageRuns(
     });
   }
 
-  const runs = runsFromLabels(smoothLabels(labels), cell, audio.length);
+  // Three filters, cheapest first, each removing a different way a language
+  // nobody spoke gets into the result: a pause voting at random, a single cell
+  // disagreeing with both neighbours, and a flicker too short to be real.
+  const heard = silenceInherits(labels, cellEnergies(audio, cell));
+  const runs = absorbStrayLanguages(
+    runsFromLabels(smoothLabels(heard), cell, audio.length),
+    audio.length,
+  );
 
   // Put each change where it actually happened, not on the grid that found it.
   // A cut two seconds early leaves two seconds of the *old* language at the
@@ -480,6 +685,128 @@ async function languageRuns(
 /// recording produces most of, at every seam.
 export function readable(text: string): string {
   return text.replace(/\uFFFD/g, "").replace(/\s+/g, " ").trim();
+}
+
+type Transcriber = (
+  audio: Float32Array,
+  settings: Record<string, unknown>,
+) => Promise<{ text: string; chunks?: WhisperChunk[] }>;
+
+/// Read again over any stretch of speech that produced nothing.
+///
+/// Whisper's pipeline reconciles overlapping windows by matching their tokens,
+/// and when that match goes wrong it does not error — it drops the span.
+/// Measured by OpenSubs on real footage: twenty seconds of a Chinese interview
+/// simply absent from the output.
+///
+/// It is also *chaotic*. Moving where a pass begins by half a second reshuffles
+/// every 30-second window inside it, and the same audio then loses a different
+/// span, or none. Three runs over one file covered 210 seconds, then 184, then
+/// 201. So it cannot be tuned away by choosing better boundaries; a boundary
+/// that avoids it on one file is luck.
+///
+/// What can be done is to notice. Silence needs no transcript, so a gap is only
+/// suspicious when there is sound in it — and then the span is read again on
+/// its own, where it is the whole input rather than one window among many and
+/// there is nothing to reconcile it against.
+async function fillGaps(
+  chunks: Chunk[],
+  runs: LanguageRun[],
+  audio: Float32Array,
+  transcriber: Transcriber,
+  englishOnly: boolean,
+  translate: boolean,
+  onProgress?: (progress: Progress) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  let energy = 0;
+  for (let i = 0; i < audio.length; i += 16) energy += audio[i]! * audio[i]!;
+  const overall = Math.sqrt(energy / Math.max(1, audio.length / 16));
+  if (!(overall > 0)) return;
+
+  // Re-reading is bounded work. A handful of gaps is a recogniser having a bad
+  // moment, which is worth fixing; dozens mean something else is wrong, and
+  // grinding through all of them would turn a transcription that finished
+  // badly into one that does not finish.
+  let budget = Math.min(
+    MAX_REFILLS,
+    Math.ceil(audio.length / TARGET_SAMPLE_RATE / REFILL_SECONDS_EACH),
+  );
+
+  // Rounds, because one re-read often does not finish the job: something in
+  // the first seconds after a speaker changes poisons the window, and stepping
+  // past it is all that is needed. So whatever a re-read leaves uncovered
+  // becomes a gap again, until nothing new comes back.
+  for (let round = 0; round < MAX_REFILL_ROUNDS && budget > 0; round += 1) {
+    if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    const found: Chunk[] = [];
+    chunks.sort((a, b) => a.start_ms - b.start_ms);
+
+    for (const run of runs) {
+      const from = run.from / TARGET_SAMPLE_RATE;
+      const to = run.to / TARGET_SAMPLE_RATE;
+      let cursor = from;
+      const inside = chunks.filter(
+        (c) => c.start_ms / 1000 >= from - 0.5 && c.start_ms / 1000 < to,
+      );
+      for (const seg of [...inside, { start_ms: to * 1000, end_ms: to * 1000, text: "" }]) {
+        const startS = seg.start_ms / 1000;
+        const gap = startS - cursor;
+        if (
+          budget > 0 &&
+          gap >= GAP_S &&
+          gap <= MAX_GAP_S &&
+          loudness(audio, cursor, startS) > overall * GAP_SPEECH_RATIO
+        ) {
+          budget -= 1;
+          if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+          onProgress?.({
+            stage: "transcribing",
+            fraction: null,
+            note: t("run.rereading", { seconds: Math.round(gap) }),
+          });
+          const slice = audio.slice(
+            Math.round(cursor * TARGET_SAMPLE_RATE),
+            Math.round(startS * TARGET_SAMPLE_RATE),
+          );
+          const again = await transcriber(slice, {
+            return_timestamps: true,
+            chunk_length_s: CHUNK_LENGTH_S,
+            stride_length_s: STRIDE_LENGTH_S,
+            no_repeat_ngram_size: 6,
+            ...(englishOnly
+              ? {}
+              : { language: run.language, task: translate ? "translate" : "transcribe" }),
+          });
+          for (const chunk of again.chunks ?? []) {
+            const text = readable(chunk.text);
+            const [begin, end] = chunk.timestamp;
+            if (!text || typeof begin !== "number") continue;
+            const covers = (typeof end === "number" && end > begin ? end : begin) - begin;
+            if (looksInvented(text, covers)) continue;
+            const start = cursor + begin;
+            // Never past the gap it was asked to fill.
+            if (start >= startS) continue;
+            found.push({
+              start_ms: Math.round(start * 1000),
+              end_ms: Math.round(
+                Math.min(
+                  startS,
+                  cursor + (typeof end === "number" && end > begin ? end : begin + 1),
+                ) * 1000,
+              ),
+              text,
+            });
+          }
+        }
+        cursor = Math.max(cursor, seg.end_ms / 1000);
+      }
+    }
+
+    if (found.length === 0) break;
+    chunks.push(...found);
+    chunks.sort((a, b) => a.start_ms - b.start_ms);
+  }
 }
 
 let pipelinePromise: Promise<unknown> | null = null;
@@ -620,6 +947,11 @@ export async function transcribe(options: Options): Promise<Transcribed> {
       // Began after this pass's own audio ended: that is the next speaker, and
       // the next pass reads them in their own language.
       if (offset + start >= cut) continue;
+      // A long span holding almost no text is a guess smeared across audio the
+      // model could not read, not a slow speaker. Dropping it also lets the gap
+      // filler below see the span as unread and try it on its own.
+      const covers = (typeof end === "number" && end > start ? end : start) - start;
+      if (looksInvented(text, covers)) continue;
       chunks.push({
         start_ms: Math.round((offset + start) * 1000),
         // A final chunk can come back with a null end; give it a plausible
@@ -638,9 +970,33 @@ export async function transcribe(options: Options): Promise<Transcribed> {
 
   chunks.sort((a, b) => a.start_ms - b.start_ms);
 
+  // Anything the pipeline dropped, read again on its own.
+  await fillGaps(
+    chunks,
+    runs,
+    options.pcm,
+    transcriber,
+    englishOnly,
+    Boolean(options.translate),
+    options.onProgress,
+    options.signal,
+  );
+
   if (chunks.length === 0) {
     throw new Error(t("error.noSpeech"));
   }
+
+  // One script, whichever one was asked for.
+  //
+  // Whisper has a single `<|zh|>` and writes whichever script it likes, changing
+  // within a file — measured here across a 28-minute meeting that alternated
+  // dozens of times. Choosing 简体 has to mean something, and afterwards is the
+  // only place it can. Traditional is left alone: that direction is not one
+  // character to one, and a table cannot choose between 干, 乾 and 幹.
+  if (heard.some(isChinese) && !wantsTraditional(options.language)) {
+    for (const chunk of chunks) chunk.text = await toSimplified(chunk.text);
+  }
+
   const dominant =
     [...spoken.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? heard[0] ?? null;
   return { chunks, languages: heard, dominant };

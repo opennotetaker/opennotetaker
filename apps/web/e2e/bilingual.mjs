@@ -102,6 +102,23 @@ check(
   result.languages.join(","),
 );
 check("the Chinese is transcribed as Chinese characters", chinese.length > 0);
+// Whisper has one <|zh|> and writes whichever script it likes, changing within
+// a file. A reader who chose 简体 has to get 简体, so it is normalised
+// afterwards -- the only place it can be. These characters differ between the
+// scripts, and are the ones this fixture actually says.
+{
+  const zh = chinese.map((chunk) => chunk.text).join("");
+  // Exactly the characters of this fixture's sentence that differ between the
+  // scripts, taken from the conversion table rather than guessed: 告 and 部 are
+  // the same in both, so listing them would fail on correct output.
+  const traditional = [..."來個們備問報場時會準討說論開間預題"].filter((c) => zh.includes(c));
+  check(
+    "the Chinese comes back in one script, and it is Simplified",
+    traditional.length === 0,
+    `Traditional characters still present: ${traditional.join("") || "(none)"}`,
+  );
+  check("…and it really is the Simplified forms", /[们个开会讨论]/.test(zh), zh.slice(0, 24));
+}
 check("the English is transcribed as English", english.length > 0);
 // The bug this file exists for: Chinese decoded as English produced romanised
 // syllables or invented English sentences, and no Han characters at all.

@@ -257,6 +257,119 @@ for (const [route, expect, mayContact] of [
   );
 }
 
+// The filters that stop a language nobody spoke reaching the transcript.
+//
+// A 28-minute Chinese meeting came back with a wall of invented Thai in it.
+// The cause is that language detection is an argmax over ninety-nine
+// candidates with no "none of these" among them, so every pause votes.
+{
+  const langGuards = await page.evaluate(() => {
+    const { transcribe } = window.__test;
+    const out = {};
+
+    // A pause between two Chinese stretches must not vote for itself.
+    const loud = 1, quiet = 0.0000001;
+    out.silenceInherits = transcribe
+      .silenceInherits(["zh", "th", "zh"], [loud, quiet, loud])
+      .join(",");
+    // …and a quiet cell at the very start takes the first loud answer.
+    out.leading = transcribe.silenceInherits(["ja", "zh", "zh"], [quiet, loud, loud]).join(",");
+    // Silence throughout has no neighbour to inherit from; leave it be.
+    out.allQuiet = transcribe
+      .silenceInherits(["th", "th"], [0, 0])
+      .join(",");
+
+    // Eight seconds of Thai in a 28-minute Chinese meeting: 0.5% of it.
+    const S = 16000;
+    const meeting = 1680 * S;
+    out.absorbed = transcribe
+      .absorbStrayLanguages(
+        [
+          { from: 0, to: 800 * S, language: "zh" },
+          { from: 800 * S, to: 808 * S, language: "th" },
+          { from: 808 * S, to: meeting, language: "zh" },
+        ],
+        meeting,
+      )
+      .map((r) => r.language)
+      .join(",");
+    // The bilingual fixture: 4.4s of English in a 29-second file is 15%, and
+    // is the half that a length threshold wrongly swallowed.
+    out.kept = transcribe
+      .absorbStrayLanguages(
+        [
+          { from: 0, to: 4.4 * S, language: "en" },
+          { from: 4.4 * S, to: 29 * S, language: "zh" },
+        ],
+        29 * S,
+      )
+      .map((r) => r.language)
+      .join(",");
+    // A brief but real switch inside a long meeting survives on the absolute
+    // floor even though its share is small: 30s of 1680 is 1.8%.
+    out.briefButReal = transcribe
+      .absorbStrayLanguages(
+        [
+          { from: 0, to: 800 * S, language: "zh" },
+          { from: 800 * S, to: 830 * S, language: "en" },
+          { from: 830 * S, to: meeting, language: "zh" },
+        ],
+        meeting,
+      )
+      .map((r) => r.language)
+      .join(",");
+
+    // Thirty seconds holding four words is a smear, not a slow speaker.
+    out.invented = transcribe.looksInvented("OK ที่นี่ ที่นี่", 30);
+    out.realSpeech = transcribe.looksInvented(
+      "Hosting is up about eleven percent, and most of that is staging.",
+      6,
+    );
+
+    return out;
+  });
+
+  check("a pause between two Chinese stretches does not vote for Thai",
+    langGuards.silenceInherits === "zh,zh,zh", langGuards.silenceInherits);
+  check("a quiet opening cell takes the first language actually spoken",
+    langGuards.leading === "zh,zh,zh", langGuards.leading);
+  check("silence throughout is left alone rather than given a language",
+    langGuards.allQuiet === "th,th", langGuards.allQuiet);
+  check("eight seconds of Thai in a 28-minute meeting is absorbed",
+    langGuards.absorbed === "zh", langGuards.absorbed);
+  check("…while 4.4s of English in a 29s file — 15% of it — survives",
+    langGuards.kept === "en,zh", langGuards.kept);
+  check("…and so does a brief but real switch, on the absolute floor",
+    langGuards.briefButReal === "zh,en,zh", langGuards.briefButReal);
+  check("a long span holding four words is refused as invented", langGuards.invented === true);
+  check("…and ordinary speech is not", langGuards.realSpeech === false);
+}
+
+// One script, whichever was asked for. Whisper's single <|zh|> writes either.
+{
+  const script = await page.evaluate(async () => {
+    const { script } = window.__test;
+    return {
+      converted: await script.toSimplified("我們下個星期開會討論預算的問題"),
+      alreadySimplified: await script.toSimplified("我们下个星期开会"),
+      japaneseLeftAlone: await script.toSimplified("時間がある"),
+      latinUntouched: await script.toSimplified("Hosting is up 11%"),
+      traditionalWanted: script.wantsTraditional("zh-Hant"),
+      simplifiedNotWanted: script.wantsTraditional("zh-Hans"),
+    };
+  });
+  check("Traditional output is normalised to Simplified",
+    script.converted === "我们下个星期开会讨论预算的问题", script.converted);
+  check("…and Simplified is already itself",
+    script.alreadySimplified === "我们下个星期开会", script.alreadySimplified);
+  // Kana proves the text is not Chinese: 時 in Japanese must not become 时.
+  check("Japanese is left alone, kana being the proof it is not Chinese",
+    script.japaneseLeftAlone === "時間がある", script.japaneseLeftAlone);
+  check("Latin text is untouched", script.latinUntouched === "Hosting is up 11%");
+  check("asking for Traditional is honoured", script.traditionalWanted === true);
+  check("…and asking for Simplified is not mistaken for it", script.simplifiedNotWanted === false);
+}
+
 // Speaker separation, on the same recorded speech the Rust tests use, through
 // the wasm the app actually calls. One person talking for sixteen seconds came
 // back as four speakers before the divergence replaced the cosine, and that is

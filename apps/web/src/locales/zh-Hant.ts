@@ -420,6 +420,7 @@ export const zhHant: Catalogue = {
   "privacy.secondLanguageHint":
     "兩種語言都會聆聽，每一段都以實際所說的那一種轉寫。指明語言可以避免偵測跑到第三種去。",
   "run.listeningForLanguage": "正在辨識語言",
+  "run.rereading": "重新辨識這 {seconds} 秒——辨識器漏掉了",
   "privacy.languageHint": "Whisper 支援 99 種。除非它老是猜錯，否則保持自動偵測即可。",
   "privacy.translateToEnglish": "轉錄時同步譯成英文",
   "privacy.translateHint":

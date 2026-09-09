@@ -117,6 +117,33 @@ which an accented syllable or a noisy stretch is otherwise enough to cause.
 all and will render any other language as English-sounding nonsense. Use Base
 or larger for anything but English.
 
+## When the transcript has gaps, or a language nobody spoke
+
+Three faults come from the recogniser rather than from your recording, and all
+three are now corrected in the pipeline. They are worth knowing about because
+each one used to be silent.
+
+**Whisper's pipeline drops spans.** It reconciles overlapping 30-second windows
+by matching their tokens, and when that match fails it does not error — the
+audio simply produces nothing. It is also chaotic: moving where a pass starts
+by half a second loses a different span, or none. So any stretch of *audible*
+speech with no transcript over it is now read again on its own, where there is
+no window to reconcile against. You will see "Reading 12s again" while it works.
+
+**Silence votes for a language.** Detection reads the language token Whisper
+predicts, which is an argmax over ninety-nine candidates with no "none of
+these" among them — so every pause picks one at random. Two pauses agreeing
+used to be enough to open a transcription pass in a language nobody spoke,
+which Whisper then filled with invented text. Quiet stretches now inherit the
+language around them, and a language holding under 4% of the recording is
+discarded unless it holds 25 seconds outright.
+
+**One Chinese, two scripts.** Whisper has a single `zh` and writes 简体 or 繁體
+as it feels, changing many times within one file. Half a transcript in each is
+not a style. Output is normalised to Simplified unless you ask for Traditional,
+which is left alone — that direction is not one character to one, and no table
+can choose between 干, 乾 and 幹.
+
 ## When it finds more people than were in the room
 
 Speakers are told apart by the sound of each voice, on your machine, with no

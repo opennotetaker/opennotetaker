@@ -436,6 +436,7 @@ export const en = {
   "privacy.secondLanguageHint":
     "Both languages are listened for, and each stretch is transcribed in the one actually being spoken. Naming them stops detection wandering into a third.",
   "run.listeningForLanguage": "Listening for the language",
+  "run.rereading": "Reading {seconds}s again — the recogniser skipped it",
   "privacy.languageHint":
     "Whisper handles 99. Leave it on detect unless it keeps guessing wrong.",
   "privacy.translateToEnglish": "Translate into English while transcribing",

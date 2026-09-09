@@ -156,7 +156,8 @@ async function boot(): Promise<void> {
     // running a recogniser would mean downloading a model per run.
     const transcribe = await import("./lib/transcribe");
     const decode = await import("./lib/decode");
-    (window as unknown as { __test: unknown }).__test = { app, engine, transcribe, decode };
+    const script = await import("./lib/script");
+    (window as unknown as { __test: unknown }).__test = { app, engine, transcribe, decode, script };
   }
 }
 
