@@ -14,6 +14,7 @@
     "test": "cargo test --workspace",
     "test:extension": "npm test -w opennotetaker-extension",
     "test:extension:e2e": "npm run test:e2e -w opennotetaker-extension",
-    "bilingual": "npm run bilingual -w opennotetaker-web"
+    "bilingual": "npm run bilingual -w opennotetaker-web",
+    "inspect": "npm run inspect -w opennotetaker-web --"
   }
 }

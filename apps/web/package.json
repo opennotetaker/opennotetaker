@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit && node scripts/check-locales.mjs",
     "smoke": "npm run build:e2e && node e2e/smoke.mjs",
     "build:e2e": "OPENNOTETAKER_E2E=1 vite build",
-    "bilingual": "npm run build:e2e && node e2e/bilingual.mjs"
+    "bilingual": "npm run build:e2e && node e2e/bilingual.mjs",
+    "inspect": "npm run build:e2e && node e2e/inspect.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",

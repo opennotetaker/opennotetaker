@@ -17,3 +17,6 @@ apps/web/public/ort/
 
 .DS_Store
 *.log
+
+# What e2e/inspect.mjs writes beside whatever file it was pointed at.
+*-transcript.txt
