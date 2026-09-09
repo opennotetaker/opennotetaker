@@ -23,6 +23,7 @@ import { detectorInstalled, type Handoff } from "../lib/ext-bridge";
 import { type Input, inputsAreNamed, listInputs, nameInputs } from "../lib/inputs";
 import { formatDate, t } from "../lib/i18n";
 import { canCaptureTab, Recorder, type SourceKind } from "../lib/recorder";
+import { saveSettings } from "../lib/store";
 import type { App } from "../main";
 import type { Note } from "../types";
 import { runTranscription } from "./transcribe-flow";
@@ -195,6 +196,33 @@ function gate(app: App): Node {
     ),
 
     el("div.card", el("h3", t("record.sourcesHeading")), sourceBoxes),
+
+    // What happens to the recording afterwards, decided before it is made.
+    //
+    // This lived only in the privacy centre, off by default, and the
+    // consequence arrived weeks later: a 28-minute meeting transcribed badly,
+    // and no audio left to run again. The moment that choice matters is this
+    // one, so it is offered here -- and the warning is written as what is lost
+    // rather than as what is stored, because "the audio is discarded" reads
+    // like a feature and "you cannot fix a bad transcript" reads like the
+    // trade it actually is.
+    el(
+      "div.card",
+      el("h3", t("record.afterHeading")),
+      checkbox(
+        t("record.keepAudio"),
+        t("record.keepAudioHint"),
+        app.settings.keepAudio,
+        (on) => {
+          app.settings.keepAudio = on;
+          saveSettings(app.settings);
+          app.render();
+        },
+      ),
+      app.settings.keepAudio
+        ? null
+        : el("p.note.warn", { style: "margin:.75rem 0 0" }, t("record.keepAudioWarning")),
+    ),
 
     el(
       "div.card",

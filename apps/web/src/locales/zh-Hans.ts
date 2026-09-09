@@ -105,6 +105,12 @@ export const zhHans: Catalogue = {
   "record.whoHeading": "这次对话里有谁？",
   "record.whoHint": "选填，且只保存在本地。它会写进同意记录和导出的笔记里。",
   "record.whoPlaceholder": "小安、Priya，还有客户那边的两位",
+  "record.afterHeading": "录完之后",
+  "record.keepAudio": "保留录音，而不只是文字记录",
+  "record.keepAudioHint":
+    "只存在这个浏览器里，删除笔记时一并删除。它是体积更大、也更敏感的那一半，所以默认不保留。",
+  "record.keepAudioWarning":
+    "关闭笔记时录音会被丢弃。如果转录出了问题——语言判断错了、两个人被并成一个——就没有东西可以重新识别了。",
   "record.sourcesHeading": "要录制什么？",
   "record.source.mic": "你的麦克风",
   "record.source.micHint": "你，以及和你在同一个房间里的人。",

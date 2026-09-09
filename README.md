@@ -166,8 +166,11 @@ over the automatic guess, in both directions — it will split a recording it ha
 merged, or merge one it had split. Clicking a name in the transcript moves that
 single line to someone else.
 
-Both of those need the audio, so they only work if **Keep the audio** was on
-under Privacy when you recorded. It is off by default.
+Both of those need the audio, and so does re-transcribing. That is decided
+**before** you record — the record screen carries the choice and says what it
+costs, because the moment it matters is the one before the recording exists.
+It stays off by default, since the audio is the larger and more sensitive half,
+but a transcript you cannot re-run is a transcript you are stuck with.
 
 ## Being asked, instead of remembering
 

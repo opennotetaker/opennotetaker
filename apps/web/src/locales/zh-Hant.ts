@@ -114,6 +114,12 @@ export const zhHant: Catalogue = {
   "record.whoHeading": "這次對話裡有誰？",
   "record.whoHint": "選填，且只儲存在本機。它會寫進同意紀錄與匯出的筆記裡。",
   "record.whoPlaceholder": "小安、Priya，還有客戶那邊的兩位",
+  "record.afterHeading": "錄完之後",
+  "record.keepAudio": "保留錄音，而不只是逐字稿",
+  "record.keepAudioHint":
+    "只存在這個瀏覽器裡，刪除筆記時一併刪除。它是體積更大、也更敏感的那一半，所以預設不保留。",
+  "record.keepAudioWarning":
+    "關閉筆記時錄音會被丟棄。如果轉錄出了問題——語言判斷錯了、兩個人被併成一個——就沒有東西可以重新辨識了。",
   "record.sourcesHeading": "要錄製什麼？",
   "record.source.mic": "你的麥克風",
   "record.source.micHint": "你，以及和你在同一個房間裡的人。",

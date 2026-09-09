@@ -105,6 +105,12 @@ export const en = {
   "record.whoHint":
     "Optional, and only stored here. It goes into the record and the exported notes.",
   "record.whoPlaceholder": "Ana, Priya, and two people from the client",
+  "record.afterHeading": "Afterwards",
+  "record.keepAudio": "Keep the recording, not just the transcript",
+  "record.keepAudioHint":
+    "Stored in this browser only, and deleted with the note. It is the larger and more sensitive half, which is why it is off unless you ask.",
+  "record.keepAudioWarning":
+    "The audio will be discarded when you close the note. If the transcript comes out wrong \u2014 a language it did not expect, two people merged into one \u2014 there will be nothing left to run again.",
   "record.sourcesHeading": "What should be recorded?",
   "record.source.mic": "Your microphone",
   "record.source.micHint": "You and anyone in the room with you.",

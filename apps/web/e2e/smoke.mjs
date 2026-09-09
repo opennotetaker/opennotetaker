@@ -460,6 +460,32 @@ check(
   `${masking.markWidth} vs tofu ${masking.tofuWidth}`,
 );
 
+// The choice that decides whether a bad transcript can ever be fixed has to be
+// on the screen where a recording starts, not only in a settings page nobody
+// opened. A 28-minute meeting was transcribed badly and could not be re-run.
+await page.goto(BASE + "#/record");
+await page.waitForTimeout(200);
+{
+  const keep = page.getByRole("checkbox", { name: /Keep the recording/i });
+  check("the record screen offers to keep the audio", (await keep.count()) === 1);
+  check("…and it is off, as the default is", !(await keep.isChecked()));
+  const warned = await page.getByText(/nothing left to run again/i).count();
+  check("…and says plainly what that costs", warned === 1);
+
+  await keep.check();
+  await page.waitForTimeout(150);
+  check("ticking it clears the warning",
+    (await page.getByText(/nothing left to run again/i).count()) === 0);
+  // It is a real setting, not a per-visit toggle: the privacy centre agrees.
+  await page.goto(BASE + "#/privacy");
+  await page.waitForTimeout(200);
+  check(
+    "…and the privacy centre now agrees",
+    await page.getByRole("checkbox", { name: /Keep the audio/i }).isChecked(),
+  );
+  await page.getByRole("checkbox", { name: /Keep the audio/i }).uncheck();
+}
+
 // The consent gate is the product's opening argument; it must be on the screen
 // before a recording can start, not behind a disclosure.
 await page.goto(BASE + "#/record");
@@ -493,9 +519,12 @@ check(
 
   await tabSource.check();
   await page.waitForTimeout(150);
+  // Assert the *mic* warning is gone, not that the screen holds no notes at
+  // all: the "keep the recording" card carries its own, and counting every
+  // note made this pass only while that one happened to be absent.
   check(
     "the warning goes away when the tab is recorded too",
-    (await page.locator("main .note").count()) === 0,
+    !(await page.locator("main .note").allInnerTexts()).join(" ").includes("cancelled out"),
   );
 
   // The input chooser is how a desktop-app meeting gets recorded, through a
