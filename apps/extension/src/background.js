@@ -25,7 +25,7 @@
 // and the picker one press away. A failed shortcut must never be a failed
 // recording.
 
-import { detect } from "./platforms.js";
+import { detect, normaliseAppUrl } from "./platforms.js";
 
 const DEFAULT_APP_URL = "https://opennotetaker.app/";
 const HANDOFF = "opennotetaker:handoff";
@@ -45,8 +45,9 @@ chrome.runtime.onInstalled.addListener(() => {
 
 async function appUrl() {
   const { appUrl } = await chrome.storage.sync.get({ appUrl: DEFAULT_APP_URL });
-  return appUrl || DEFAULT_APP_URL;
+  return normaliseAppUrl(appUrl) || DEFAULT_APP_URL;
 }
+
 
 async function silenced(host) {
   const { silenced = [] } = await chrome.storage.sync.get({ silenced: [] });

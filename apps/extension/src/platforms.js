@@ -157,3 +157,30 @@ export const MATCH_PATTERNS = [
   "https://wemeet.qq.com/*",
   "https://meeting.qq.com/*",
 ];
+
+/// Rewrite a stored address that now only redirects.
+///
+/// `chrome.storage.sync` is written once, at install, and then outlives every
+/// update -- so an address that was right when it was stored keeps being used
+/// long after it stops being right. The app used to live at `app.<domain>` and
+/// now lives at the apex, which 301s; following that redirect works, but it
+/// lands the handoff on an origin the bridge content script is not matched
+/// against until the redirect completes, and it shows the user a hostname the
+/// product no longer uses.
+///
+/// Exported for the tests, and deliberately narrow: only the `app.` label of a
+/// host we know has moved, never a host somebody deliberately typed.
+export function normaliseAppUrl(stored) {
+  if (!stored) return stored;
+  try {
+    const url = new URL(stored);
+    if (url.host === "app.opennotetaker.app") {
+      url.host = "opennotetaker.app";
+      return url.toString();
+    }
+    return stored;
+  } catch {
+    // Not a URL at all. `appUrl()` falls back to the default.
+    return null;
+  }
+}

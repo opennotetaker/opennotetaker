@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { detect, MATCH_PATTERNS } from "../src/platforms.js";
+import { detect, MATCH_PATTERNS, normaliseAppUrl } from "../src/platforms.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -124,4 +124,20 @@ test("every message the code asks for exists in every locale", () => {
       `${code} has a different number of messages from en`,
     );
   }
+});
+
+test("an address stored before the app moved is rewritten, not followed", () => {
+  // chrome.storage.sync is written once at install and outlives every update,
+  // so a value that was right then keeps being used long after it is not.
+  assert.equal(
+    normaliseAppUrl("https://app.opennotetaker.app/"),
+    "https://opennotetaker.app/",
+  );
+  // Only that one host, and only that label. A self-hosted install is not ours
+  // to rewrite.
+  assert.equal(normaliseAppUrl("https://notes.example.com/"), "https://notes.example.com/");
+  assert.equal(normaliseAppUrl("http://localhost:5173/"), "http://localhost:5173/");
+  assert.equal(normaliseAppUrl("https://opennotetaker.app/"), "https://opennotetaker.app/");
+  // Nonsense falls through to the default rather than throwing on every prompt.
+  assert.equal(normaliseAppUrl("not a url"), null);
 });
