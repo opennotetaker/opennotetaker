@@ -127,8 +127,8 @@ test("every message the code asks for exists in every locale", () => {
 });
 
 test("an address stored before the app moved is rewritten, not followed", () => {
-  // chrome.storage.sync is written once at install and outlives every update,
-  // so a value that was right then keeps being used long after it is not.
+  // The old host is retired -- no DNS at all -- so a stored value pointing at
+  // it opens a page that cannot resolve. This is the only thing preventing it.
   assert.equal(
     normaliseAppUrl("https://app.opennotetaker.app/"),
     "https://opennotetaker.app/",
