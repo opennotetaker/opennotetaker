@@ -20,7 +20,12 @@
 // A locale that genuinely cannot be finished belongs on a branch, not shipped
 // at 80%.
 
+import { de } from "../locales/de";
 import { en } from "../locales/en";
+import { es } from "../locales/es";
+import { ja } from "../locales/ja";
+import { ko } from "../locales/ko";
+import { pt } from "../locales/pt";
 import { zhHans } from "../locales/zh-Hans";
 import { zhHant } from "../locales/zh-Hant";
 
@@ -33,7 +38,7 @@ import { zhHant } from "../locales/zh-Hant";
 /// that does not.
 export type Catalogue = Record<keyof typeof en, string>;
 export type Key = keyof Catalogue;
-export type LocaleCode = "en" | "zh-Hans" | "zh-Hant";
+export type LocaleCode = "en" | "zh-Hans" | "zh-Hant" | "ja" | "ko" | "de" | "es" | "pt";
 
 export interface Locale {
   code: LocaleCode;
@@ -46,10 +51,24 @@ export interface Locale {
   intl: string;
 }
 
+/// The eight the suite ships, in the order the picker shows them.
+///
+/// A ninth is a permanent commitment: every string added to the product from
+/// then on needs a translation in all of them, and a locale that falls behind
+/// is a build error rather than a quiet gap. Do not add one casually.
+///
+/// Labels are endonyms and are never translated — somebody looking for their
+/// own language looks for the word they call it, so 日本語 stays 日本語 in the
+/// German picker.
 export const LOCALES: Locale[] = [
   { code: "en", label: "English", catalogue: en, intl: "en" },
   { code: "zh-Hans", label: "简体中文", catalogue: zhHans, intl: "zh-Hans" },
   { code: "zh-Hant", label: "繁體中文", catalogue: zhHant, intl: "zh-Hant" },
+  { code: "ja", label: "日本語", catalogue: ja, intl: "ja" },
+  { code: "ko", label: "한국어", catalogue: ko, intl: "ko" },
+  { code: "de", label: "Deutsch", catalogue: de, intl: "de" },
+  { code: "es", label: "Español", catalogue: es, intl: "es" },
+  { code: "pt", label: "Português", catalogue: pt, intl: "pt" },
 ];
 
 const STORAGE_KEY = "opennotetaker.locale";
@@ -65,12 +84,26 @@ let active: Locale = LOCALES[0]!;
 export function detect(): LocaleCode {
   for (const tag of navigator.languages ?? [navigator.language]) {
     const lower = (tag ?? "").toLowerCase();
-    if (!lower.startsWith("zh")) {
-      if (lower.startsWith("en")) return "en";
-      continue;
+    if (!lower) continue;
+
+    // Chinese first, because it is the one where the region is the wrong
+    // thing to match on. `zh-TW`, `zh-HK` and `zh-MO` are Traditional; `zh-CN`,
+    // `zh-SG` and a bare `zh` are Simplified. Falling through to the base
+    // language would hand a Taipei reader Simplified characters, which reads
+    // as carelessness to exactly the audience the distinction is for.
+    if (lower.startsWith("zh")) {
+      return lower.includes("hant") || /-(tw|hk|mo)\b/.test(lower) ? "zh-Hant" : "zh-Hans";
     }
-    if (lower.includes("hant") || /-(tw|hk|mo)\b/.test(lower)) return "zh-Hant";
-    return "zh-Hans";
+
+    // Then widen: the exact tag, then the base language. A browser asking for
+    // `pt-BR`, `es-419` or `de-AT` gets Portuguese, Spanish and German rather
+    // than falling all the way to English — matching on equality alone is why
+    // this used to answer English for every language but two.
+    const exact = LOCALES.find((locale) => locale.code.toLowerCase() === lower);
+    if (exact) return exact.code;
+    const base = lower.split("-")[0];
+    const wider = LOCALES.find((locale) => locale.code.toLowerCase() === base);
+    if (wider) return wider.code;
   }
   return "en";
 }

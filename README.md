@@ -23,7 +23,7 @@ docker compose up --build   # http://localhost:8088
 | | Where it runs | Price |
 |---|---|---|
 | Transcription, 99 languages | Your browser | Free |
-| Interface in English, 简体中文, 繁體中文 | Your browser | Free |
+| Interface in eight languages | Your browser | Free |
 | A timestamp on every sentence | Your browser | Free |
 | Telling speakers apart | Your browser | Free |
 | Recording without a bot in the call | Your browser | Free |

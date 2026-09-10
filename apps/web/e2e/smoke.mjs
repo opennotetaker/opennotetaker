@@ -586,6 +586,98 @@ await page.waitForTimeout(200);
     (await page.evaluate(() => document.body.dataset.route)) === "");
 }
 
+// Every offered language reaches the screen.
+//
+// A translation can exist in a file and never render — the picker can be
+// missing an entry, a catalogue can be registered under the wrong code. This
+// asserts on a string that differs in all eight, which the empty-library
+// sentence does; "Biblioteca" would not separate Spanish from Portuguese.
+{
+  await page.goto(BASE + "#/library");
+  await page.waitForTimeout(200);
+  const picker = page.locator("select.lang");
+
+  const offered = await picker.locator("option").evaluateAll((os) =>
+    os.map((o) => ({ code: o.value, label: o.textContent.trim() })));
+  check("all eight languages are offered", offered.length === 8,
+    offered.map((o) => o.code).join(","));
+  // Endonyms: somebody looks for the word they call their own language.
+  check("…each named in its own language",
+    ["English", "简体中文", "繁體中文", "日本語", "한국어", "Deutsch", "Español", "Português"]
+      .every((label) => offered.some((o) => o.label === label)),
+    offered.map((o) => o.label).join(" | "));
+
+  const seen = new Map();
+  for (const { code } of offered) {
+    await picker.selectOption(code);
+    await page.waitForTimeout(250);
+    // Not the heading: "Biblioteca" is the same word in Spanish and in
+    // Portuguese, so it proves nothing about either. The search placeholder is
+    // a whole sentence and differs in all eight.
+    const [marker, lang] = await page.evaluate(() => [
+      document.querySelector("main input[type=search], main input[placeholder]")
+        ?.getAttribute("placeholder") ?? "",
+      document.documentElement.lang,
+    ]);
+    seen.set(code, marker);
+    // `lang` is not decoration: it picks the right glyphs for Han characters,
+    // which are drawn differently in Chinese and Japanese, and it is what a
+    // screen reader switches voice on.
+    check(`${code}: the document language follows the picker`,
+      lang === code, `<html lang="${lang}">`);
+  }
+  check("every language renders differently on screen",
+    new Set(seen.values()).size === 8 && ![...seen.values()].some((v) => !v),
+    [...seen].map(([c, h]) => `${c}=${h}`).join(" | "));
+
+  // The choice has to survive a reload, or the picker is a per-visit toy.
+  await picker.selectOption("ja");
+  await page.waitForTimeout(200);
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForTimeout(400);
+  check("the choice survives a reload",
+    (await page.evaluate(() => document.documentElement.lang)) === "ja");
+  await page.locator("select.lang").selectOption("en");
+  await page.waitForTimeout(200);
+}
+
+// Matching widens rather than requiring equality. A browser asking for pt-BR
+// gets Portuguese, not English — which is what it used to get, because only
+// zh and en were understood at all.
+{
+  const widening = await page.evaluate(() => {
+    const { detect } = window.__test.i18n;
+    const real = Object.getOwnPropertyDescriptor(Navigator.prototype, "languages");
+    const ask = (tags) => {
+      Object.defineProperty(navigator, "languages", { value: tags, configurable: true });
+      const got = detect();
+      if (real) Object.defineProperty(Navigator.prototype, "languages", real);
+      return got;
+    };
+    return {
+      ptBR: ask(["pt-BR"]),
+      es419: ask(["es-419"]),
+      deAT: ask(["de-AT"]),
+      jaJP: ask(["ja-JP"]),
+      koKR: ask(["ko-KR"]),
+      zhTW: ask(["zh-TW"]),
+      zhCN: ask(["zh-CN"]),
+      unknown: ask(["is-IS"]),
+      skipToKnown: ask(["is-IS", "de-DE"]),
+    };
+  });
+  check("pt-BR widens to Portuguese", widening.ptBR === "pt", widening.ptBR);
+  check("es-419 widens to Spanish", widening.es419 === "es", widening.es419);
+  check("de-AT widens to German", widening.deAT === "de", widening.deAT);
+  check("ja-JP widens to Japanese", widening.jaJP === "ja", widening.jaJP);
+  check("ko-KR widens to Korean", widening.koKR === "ko", widening.koKR);
+  // Script, not region — the step that a plain base-language match gets wrong.
+  check("zh-TW is Traditional, not the base language", widening.zhTW === "zh-Hant", widening.zhTW);
+  check("zh-CN is Simplified", widening.zhCN === "zh-Hans", widening.zhCN);
+  check("a language we do not ship falls back to English", widening.unknown === "en");
+  check("…and a later tag we do ship still wins", widening.skipToKnown === "de", widening.skipToKnown);
+}
+
 // The consent gate is the product's opening argument; it must be on the screen
 // before a recording can start, not behind a disclosure.
 await page.goto(BASE + "#/record");

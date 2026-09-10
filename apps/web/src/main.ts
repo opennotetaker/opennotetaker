@@ -169,7 +169,8 @@ async function boot(): Promise<void> {
     const transcribe = await import("./lib/transcribe");
     const decode = await import("./lib/decode");
     const script = await import("./lib/script");
-    (window as unknown as { __test: unknown }).__test = { app, engine, transcribe, decode, script };
+    const i18n = await import("./lib/i18n");
+    (window as unknown as { __test: unknown }).__test = { app, engine, transcribe, decode, script, i18n };
   }
 }
 

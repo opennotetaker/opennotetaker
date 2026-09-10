@@ -207,6 +207,18 @@ languages, and here each language run is its own pass whose lead-out is
 trimmed at the cut. Copying either would have been duplication dressed as
 diligence.
 
+**Eight languages, and a missing string is a build error.** Each locale is
+typed as the full `Catalogue`, so a half-translated screen cannot ship — which
+is the suite's `openapps-i18n` guarantee arrived at from the other direction.
+That skill uses the English text as the key so a gap degrades to English; here
+the gap cannot exist, so the keys stay dotted and namespaced by where they
+appear. Both answer the same question; only one of them also fails the build.
+
+Detection widens rather than matching: exact tag, then base language, with
+Chinese decided on script before either, because `zh-TW` falling through to
+`zh` hands a Taipei reader Simplified characters. `pt-BR`, `es-419` and
+`de-AT` used to get English — only `zh` and `en` were understood at all.
+
 **The subtitle and document exporters disagree on purpose.** SRT and WebVTT
 must preserve Whisper's cue boundaries exactly; a merged cue is a wall of text
 that outlasts the sentence. Text, Markdown and HTML must do the opposite,
@@ -276,7 +288,7 @@ calibration is checked on speech. The fixtures are macOS `say` voices, so they
 are regenerable and carry nobody's actual voice; `npm run smoke` runs the same
 one-speaker file through the wasm the app calls.
 
-`npm run smoke` — 96 checks, driving the real built bundle in a real Chromium.
+`npm run smoke` — 126 checks, driving the real built bundle in a real Chromium.
 It stubs transcription at the one seam where model output enters the app,
 because downloading hundreds of megabytes per CI run to test somebody else's
 inference engine is not a test of this application. Everything downstream of

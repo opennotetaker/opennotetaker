@@ -14,7 +14,7 @@
 // Both are caught here by comparing each translation's placeholder set against
 // English's.
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,7 +38,46 @@ const placeholders = (value) => [...value.matchAll(/\{(\w+)\}/g)].map((m) => m[1
 const english = entries("en.ts");
 const problems = [];
 
-for (const file of ["zh-Hans.ts", "zh-Hant.ts"]) {
+// Discovered, not listed. A hardcoded list is a check that silently stops
+// covering a locale the moment one is added — which is exactly what happened
+// when the catalogue went from three languages to eight and this file went on
+// checking two of them.
+const files = readdirSync(locales)
+  .filter((name) => name.endsWith(".ts") && name !== "en.ts")
+  .sort();
+
+// Every locale the app offers must have a catalogue here, or a language sits
+// in the picker and does nothing.
+const declared = [...readFileSync(join(locales, "..", "lib", "i18n.ts"), "utf8")
+  .matchAll(/code: "([^"]+)"/g)].map((m) => m[1]).filter((code) => code !== "en");
+for (const code of declared) {
+  if (!files.includes(`${code}.ts`)) problems.push(`${code}: offered in the picker but has no catalogue`);
+}
+for (const file of files) {
+  if (!declared.includes(file.replace(/\.ts$/, ""))) {
+    problems.push(`${file}: a catalogue nothing offers — add it to LOCALES or delete it`);
+  }
+}
+
+// Values that are still the English source. Catches a copy-paste that never
+// got translated, which no type and no placeholder check can see.
+//
+// The allowlist is for genuine identities rather than a loosened rule: a
+// product name, a file extension, a word that is spelled the same. Each entry
+// is a key that is *expected* to match English in at least one locale.
+const SAME_AS_ENGLISH_OK = new Set([
+  "app.name",          // the wordmark, never translated
+  "format.json",       // "JSON (.json)" in most of them
+  "nav.start",         // "Start" is also German
+  "run.ready",         // "Pronto"/"Listo" differ, but "Ready" recurs
+  "export.heading",    // "Export" is German and English alike
+  "nav.privacy",       // never matches, but kept for the next locale that does
+  "common.listJoin",   // " and " is genuinely German's join too
+  "record.pause",      // "Pause" is the German word, not a missed string
+  "privacy.host",      // and so is "Host", which German IT uses unchanged
+]);
+
+for (const file of files) {
   const translated = entries(file);
   for (const [key, value] of english) {
     const want = placeholders(value);
@@ -49,6 +88,12 @@ for (const file of ["zh-Hans.ts", "zh-Hant.ts"]) {
   }
   for (const key of translated.keys()) {
     if (!english.has(key)) problems.push(`${file} ${key}: not in the English catalogue`);
+  }
+  for (const [key, value] of english) {
+    const mine = translated.get(key);
+    if (mine !== undefined && mine.trim() === value.trim() && !SAME_AS_ENGLISH_OK.has(key)) {
+      problems.push(`${file} ${key}: identical to the English — untranslated?`);
+    }
   }
   console.log(`${file.padEnd(12)} ${translated.size} strings`);
 }
