@@ -345,6 +345,52 @@ for (const [route, expect, mayContact] of [
   check("…and ordinary speech is not", langGuards.realSpeech === false);
 }
 
+// Whisper loops, and no_repeat_ngram_size only constrains one generation.
+// Measured on a real 28-minute meeting: 然后 然后 twelve times in one line.
+{
+  const loops = await page.evaluate(() => {
+    const { collapseLoops, splitLongChunks } = window.__test.transcribe;
+    const looped =
+      "然后这个它算是然后这个然后这个然后这个 然后这个然后然后这个 然后这个然后然后 " +
+      "然后 然后然后 然后然后 然后然后 然后然后 然后然后 然后然后 然后然后";
+    // A 40-second wall of continuous Chinese with no sentence ending in it.
+    const wall = {
+      start_ms: 0,
+      end_ms: 40_000,
+      text:
+        "然后可以看一下我们目前的情况，那个自然搜索被展示的有二百六十七次，" +
+        "然后最终点击的有十五次，因为我们还有一些外链等等，" +
+        "然后最终到官网访问的有九十四次，其中有三十九个到了商店。",
+    };
+    return {
+      collapsed: collapseLoops(looped),
+      before: looped.length,
+      untouchedEnglish: collapseLoops("It is very very very good"),
+      untouchedShortRepeat: collapseLoops("好 好 好"),
+      pieces: splitLongChunks([wall]).length,
+      spans: splitLongChunks([wall]).map((c) => Math.round((c.end_ms - c.start_ms) / 1000)),
+      rejoined: splitLongChunks([wall]).map((c) => c.text).join(""),
+      original: wall.text,
+      shortLeftAlone: splitLongChunks([{ start_ms: 0, end_ms: 6000, text: "Short enough already." }]).length,
+    };
+  });
+
+  check("a twelve-times loop is collapsed", loops.collapsed.length < loops.before * 0.75,
+    `${loops.before} -> ${loops.collapsed.length}`);
+  check("…and what is left has no run of four", !/(.{1,12}?)\1{3,}/.test(loops.collapsed), loops.collapsed);
+  // Real speech repeats. Three is a person; twelve is a model.
+  check("ordinary emphasis survives", loops.untouchedEnglish === "It is very very very good");
+  check("…and so does a three-times repeat", loops.untouchedShortRepeat === "好 好 好");
+
+  check("a forty-second wall is divided", loops.pieces >= 4, `${loops.pieces} pieces`);
+  check("…into pieces of a readable length", loops.spans.every((s) => s <= 14), loops.spans.join(","));
+  // Dividing must move no words: it is a line break, not an edit.
+  check("…losing not one character of it",
+    loops.rejoined.replace(/\s/g, "") === loops.original.replace(/\s/g, ""),
+    `${loops.rejoined.length} vs ${loops.original.length}`);
+  check("a line already short enough is left alone", loops.shortLeftAlone === 1);
+}
+
 // One script, whichever was asked for. Whisper's single <|zh|> writes either.
 {
   const script = await page.evaluate(async () => {

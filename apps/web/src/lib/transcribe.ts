@@ -303,6 +303,25 @@ const MAX_REFILL_ROUNDS = 4;
 /// talking in them are a failure.
 const GAP_SPEECH_RATIO = 0.15;
 
+/// The longest a single transcript line may run before it is divided.
+///
+/// Whisper marks a segment where it hears a sentence end, and in continuous
+/// Chinese it often does not hear one for twenty or thirty seconds. The result
+/// is a wall: one line holding a minute's worth of a meeting, with a single
+/// timestamp on it, which is unreadable and useless to jump to. Measured on a
+/// real 28-minute meeting, several lines ran past thirty seconds.
+///
+/// Longer than a subtitle may be — OpenSubs caps a cue at seven seconds
+/// because a reader has to keep up with the picture. A transcript is read at
+/// the reader's own pace, so the limit here is about being able to find a
+/// moment rather than about reading speed.
+const MAX_LINE_S = 14;
+/// What a division aims for, so the pieces are even rather than one long and
+/// one short.
+const SPLIT_TARGET_S = 8;
+/// Below this a piece is not worth being its own line.
+const MIN_LINE_S = 0.35;
+
 /// A stretch of the recording that is all one language.
 export interface LanguageRun {
   /// Sample offsets into the decoded audio.
@@ -492,6 +511,67 @@ export function absorbStrayLanguages(
     kept[kept.length - 1]!.to = Math.max(kept[kept.length - 1]!.to, runs[runs.length - 1]!.to);
   }
   return kept;
+}
+
+/// Divide a line that runs longer than one line should.
+///
+/// Cut at the punctuation nearest each proportional boundary — sentence
+/// endings first, then clauses, then spaces, and CJK punctuation throughout,
+/// because the text this exists for often has no spaces in it at all. Each
+/// piece is given time in proportion to its length, which is the same rule
+/// used to synthesise a missing end timestamp, so a divided line sits roughly
+/// where its words were spoken.
+export function splitLongChunks(chunks: Chunk[]): Chunk[] {
+  const out: Chunk[] = [];
+  for (const chunk of chunks) {
+    const span = (chunk.end_ms - chunk.start_ms) / 1000;
+    const pieces = Math.round(span / SPLIT_TARGET_S);
+    if (span <= MAX_LINE_S || pieces < 2 || chunk.text.length < 12) {
+      out.push(chunk);
+      continue;
+    }
+
+    // Where a reader would allow a break, in preference order.
+    const breaks: number[] = [];
+    const collect = (pattern: RegExp) => {
+      for (let i = 0; i < chunk.text.length - 1; i += 1) {
+        if (pattern.test(chunk.text[i]!)) breaks.push(i + 1);
+      }
+    };
+    collect(/[。！？!?…]/);
+    if (breaks.length < pieces - 1) collect(/[，、,;；:：]/);
+    if (breaks.length < pieces - 1) collect(/ /);
+    breaks.sort((a, b) => a - b);
+    if (breaks.length === 0) {
+      out.push(chunk);
+      continue;
+    }
+
+    const cuts: number[] = [];
+    for (let n = 1; n < pieces; n += 1) {
+      const want = (chunk.text.length * n) / pieces;
+      let best = breaks[0]!;
+      for (const at of breaks) {
+        if (Math.abs(at - want) < Math.abs(best - want)) best = at;
+      }
+      if (best > (cuts[cuts.length - 1] ?? 0)) cuts.push(best);
+    }
+
+    const bounds = [0, ...cuts, chunk.text.length];
+    let at = chunk.start_ms;
+    for (let i = 0; i < bounds.length - 1; i += 1) {
+      const text = chunk.text.slice(bounds[i], bounds[i + 1]).trim();
+      if (!text) continue;
+      const share = (bounds[i + 1]! - bounds[i]!) / chunk.text.length;
+      const end =
+        i === bounds.length - 2
+          ? chunk.end_ms
+          : Math.min(chunk.end_ms, at + span * share * 1000);
+      out.push({ start_ms: Math.round(at), end_ms: Math.round(Math.max(end, at + MIN_LINE_S * 1000)), text });
+      at = end;
+    }
+  }
+  return out;
 }
 
 /// Whether a segment reads as something the model invented rather than heard.
@@ -684,7 +764,69 @@ async function languageRuns(
 /// U+FFFD REPLACEMENT CHARACTER -- which is exactly what a mixed-language
 /// recording produces most of, at every seam.
 export function readable(text: string): string {
-  return text.replace(/\uFFFD/g, "").replace(/\s+/g, " ").trim();
+  return collapseLoops(text.replace(/\uFFFD/g, "").replace(/\s+/g, " ").trim());
+}
+
+/// How many times a phrase must repeat back-to-back before it is a loop rather
+/// than speech.
+///
+/// People do repeat themselves — "好 好 好", "yeah yeah" — so two or three is
+/// left alone. Measured on a real meeting, the loops were not close to that:
+/// `然后 然后` twelve times in one line, `然后` nine times in another.
+const LOOP_REPEATS = 4;
+/// The longest phrase worth looking for. Whisper's loops are short units, and
+/// searching every substring of a long line for every possible period is work
+/// that grows with the square of the line.
+const LOOP_UNIT_MAX = 12;
+
+/// Collapse a phrase repeated back-to-back into a single occurrence.
+///
+/// Whisper at this size gets stuck: it emits one unit over and over until the
+/// window ends. `no_repeat_ngram_size` is the standard mitigation and is set,
+/// but it constrains a *single* generation — transformers.js runs one per
+/// 30-second window and stitches the results, so a loop that starts near a
+/// boundary carries straight through it untouched. This is the other half.
+///
+/// Deliberately only immediate repetition. A phrase that recurs later in a
+/// meeting is someone making the same point twice, which is not ours to
+/// remove.
+export function collapseLoops(text: string): string {
+  if (!text) return text;
+  let out = text;
+  // To a fixpoint. Removing one loop can leave two survivors adjacent that a
+  // longer-unit pass has already walked past — measured on a real line, one
+  // pass took 67 characters to 47 and a second took it to 30.
+  for (let round = 0; round < 6; round += 1) {
+    const before = out;
+    out = onePass(out);
+    if (out === before) break;
+  }
+  return out.replace(/\s+/g, " ").trim();
+}
+
+function onePass(text: string): string {
+  let out = text;
+  // Longest unit first: `然后 然后` should be recognised as the unit rather
+  // than collapsed as `然后` and left as a shorter loop.
+  for (let unit = LOOP_UNIT_MAX; unit >= 1; unit -= 1) {
+    let at = 0;
+    while (at + unit <= out.length) {
+      const phrase = out.slice(at, at + unit);
+      if (!phrase.trim()) {
+        at += 1;
+        continue;
+      }
+      let repeats = 1;
+      while (out.slice(at + unit * repeats, at + unit * (repeats + 1)) === phrase) repeats += 1;
+      if (repeats >= LOOP_REPEATS) {
+        out = out.slice(0, at + unit) + out.slice(at + unit * repeats);
+        at += unit;
+      } else {
+        at += 1;
+      }
+    }
+  }
+  return out;
 }
 
 type Transcriber = (
@@ -985,6 +1127,12 @@ export async function transcribe(options: Options): Promise<Transcribed> {
   if (chunks.length === 0) {
     throw new Error(t("error.noSpeech"));
   }
+
+  // A line holding half a minute of a meeting is unreadable and impossible to
+  // jump to. Divided after the gap filler, so a refilled span is divided too.
+  const divided = splitLongChunks(chunks);
+  chunks.length = 0;
+  chunks.push(...divided);
 
   // One script, whichever one was asked for.
   //

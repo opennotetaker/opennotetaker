@@ -191,6 +191,22 @@ bilingual fixture switches after 4.4 seconds and any length threshold that
 absorbs a flicker in a long meeting also absorbs a real half of a short one —
 that was tried, and it broke the fixture.
 
+**Two more borrowed from OpenSubs, and two deliberately not.** Long lines are
+divided at punctuation nearest each proportional boundary — Whisper marks a
+segment where it hears a sentence end, and in continuous Chinese it often does
+not hear one for thirty seconds, producing a wall with one timestamp on it.
+Loops are collapsed after the fact, because `no_repeat_ngram_size` constrains a
+single generation and transformers.js runs one per 30-second window: a loop
+starting near a boundary carries through untouched, measured at `然后 然后`
+twelve times in one line.
+
+What was *not* taken: `repairTimings`, because `Transcript::normalise` in
+note-core already sorts, clamps overlaps and enforces a minimum span; and
+`partAtChanges`, because that exists to stop a subtitle cue holding two
+languages, and here each language run is its own pass whose lead-out is
+trimmed at the cut. Copying either would have been duplication dressed as
+diligence.
+
 **The subtitle and document exporters disagree on purpose.** SRT and WebVTT
 must preserve Whisper's cue boundaries exactly; a merged cue is a wall of text
 that outlasts the sentence. Text, Markdown and HTML must do the opposite,
@@ -260,7 +276,7 @@ calibration is checked on speech. The fixtures are macOS `say` voices, so they
 are regenerable and carry nobody's actual voice; `npm run smoke` runs the same
 one-speaker file through the wasm the app calls.
 
-`npm run smoke` — 83 checks, driving the real built bundle in a real Chromium.
+`npm run smoke` — 96 checks, driving the real built bundle in a real Chromium.
 It stubs transcription at the one seam where model output enters the app,
 because downloading hundreds of megabytes per CI run to test somebody else's
 inference engine is not a test of this application. Everything downstream of
