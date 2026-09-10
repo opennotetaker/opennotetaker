@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# The app is a single-page tool, not content. Crawling it yields one shell
+# page and a few hundred kilobytes of WebAssembly, so point crawlers at the
+# site that actually describes the product.
+Sitemap: https://opennotetaker.app/sitemap.xml

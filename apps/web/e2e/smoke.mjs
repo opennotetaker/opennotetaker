@@ -62,10 +62,17 @@ const check = (name, condition, detail = "") => {
 
 await page.goto(BASE, { waitUntil: "networkidle" });
 
-check("the app boots", await page.locator("h1").first().isVisible());
+// On the first route the landing copy is what is on screen and the app is
+// mounted behind it; both carry an h1, so "did it boot" is about the app
+// having rendered, not about which heading happens to be visible.
+check(
+  "the app boots",
+  (await page.locator("main h1").first().textContent())?.trim().length > 0,
+);
+check("…with the landing copy in front of it", await page.locator(".site-chrome .hero h1").isVisible());
 check(
   "the landing page leads with the promise",
-  (await page.locator("h1").first().textContent())?.includes("Nothing leaves"),
+  (await page.locator("main h1").first().textContent())?.includes("Nothing leaves"),
 );
 
 // --- the engine, through the same boundary the app uses ---------------------
@@ -246,7 +253,7 @@ for (const [route, expect, mayContact] of [
   const seen = watchRequests();
   await page.goto(BASE + route);
   await page.waitForTimeout(400);
-  const heading = await page.locator("h1").first().textContent();
+  const heading = await page.locator("main h1").first().textContent();
   check(`${route} renders`, heading?.trim() === expect, `got ${JSON.stringify(heading)}`);
 
   const unexpected = seen().filter((host) => !mayContact.includes(host));
@@ -532,6 +539,53 @@ await page.waitForTimeout(200);
   await page.getByRole("checkbox", { name: /Keep the audio/i }).uncheck();
 }
 
+// Starting a recording must need nothing installed.
+//
+// When the app moved to this origin the hero's primary button was deleted
+// rather than repointed, leaving "Get the extension" as the only thing to
+// press — an optional convenience reading as a prerequisite.
+{
+  await page.goto(BASE);
+  await page.waitForTimeout(300);
+  const hero = page.locator(".site-chrome .hero .actions");
+  const labels = (await hero.locator("a").allInnerTexts()).map((t) => t.trim());
+  check("the hero leads with recording, not with installing",
+    labels[0] === "Record a meeting", labels.join(" | "));
+  check("…and the extension is offered second", labels.some((l) => /extension/i.test(l)), labels.join(" | "));
+
+  // Pressing it must reach the consent screen on this origin.
+  await hero.getByRole("link", { name: "Record a meeting" }).click();
+  await page.waitForTimeout(400);
+  check("pressing it reaches the consent screen", new URL(page.url()).hash === "#/record", page.url());
+  check("…on this origin, with no redirect anywhere",
+    new URL(page.url()).host === new URL(BASE).host, page.url());
+}
+
+// A deep link is a fresh load with a hash already set, which is what every
+// shared link and every extension handoff is. The marketing copy must not be
+// drawn over the app on one.
+{
+  await page.goto(BASE + "#/record");
+  await page.waitForTimeout(400);
+  const state = await page.evaluate(() => ({
+    route: document.body.dataset.route,
+    chromeVisible: (() => {
+      const el = document.querySelector(".site-chrome");
+      return el ? getComputedStyle(el).display !== "none" : false;
+    })(),
+    heading: document.querySelector("main h1")?.textContent?.trim() ?? "",
+  }));
+  check("a deep link sets the route on load", state.route === "record", JSON.stringify(state));
+  check("…hides the landing copy", !state.chromeVisible);
+  check("…and shows the app's own screen", state.heading === "Before you record", state.heading);
+
+  // A bare anchor is not a route: it points into the marketing copy.
+  await page.goto(BASE + "#extension");
+  await page.waitForTimeout(300);
+  check("a bare #anchor keeps the landing copy on screen",
+    (await page.evaluate(() => document.body.dataset.route)) === "");
+}
+
 // The consent gate is the product's opening argument; it must be on the screen
 // before a recording can start, not behind a disclosure.
 await page.goto(BASE + "#/record");
@@ -606,7 +660,7 @@ check(
   });
   const mic = await recording.newPage();
   await mic.goto(BASE + "#/record", { waitUntil: "networkidle" });
-  await mic.waitForSelector("h1");
+  await mic.waitForSelector("main h1");
 
   // Tab audio cannot be granted to a driven browser -- the share picker is
   // browser chrome -- so this records the microphone alone, which is exactly
@@ -635,7 +689,7 @@ check(
   check("switching input while recording is confirmed", true);
   check(
     "the recording is still running afterwards",
-    (await mic.locator("h1").first().textContent())?.includes("Recording"),
+    (await mic.locator("main h1").first().textContent())?.includes("Recording"),
     `clock was ${elapsedBefore}`,
   );
 
@@ -646,7 +700,7 @@ check(
   await mic.waitForTimeout(500);
   check(
     "discarding returns to the start",
-    !(await mic.locator("h1").first().textContent())?.includes("Recording"),
+    !(await mic.locator("main h1").first().textContent())?.includes("Recording"),
   );
 
   await recording.close();
@@ -661,7 +715,7 @@ check(
   await page.waitForTimeout(300);
   await page.selectOption("select.lang", "zh-Hans");
   await page.waitForTimeout(300);
-  const heading = (await page.locator("h1").first().textContent()) ?? "";
+  const heading = (await page.locator("main h1").first().textContent()) ?? "";
   check("the interface switches to Simplified Chinese", heading.includes("没有机器人"), heading);
   check(
     "the document language attribute follows",
@@ -670,12 +724,12 @@ check(
 
   await page.reload();
   await page.waitForTimeout(400);
-  const after = (await page.locator("h1").first().textContent()) ?? "";
+  const after = (await page.locator("main h1").first().textContent()) ?? "";
   check("the choice survives a reload", after.includes("没有机器人"), after);
 
   await page.selectOption("select.lang", "zh-Hant");
   await page.waitForTimeout(300);
-  const hant = (await page.locator("h1").first().textContent()) ?? "";
+  const hant = (await page.locator("main h1").first().textContent()) ?? "";
   check("Traditional is a different translation, not a converted one", hant.includes("沒有機器人"), hant);
 
   // The consent screen is the one place the words have to be right, so it is

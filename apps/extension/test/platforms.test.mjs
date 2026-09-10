@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { detect, MATCH_PATTERNS, normaliseAppUrl } from "../src/platforms.js";
+import { detect, MATCH_PATTERNS, normaliseAppUrl, recordRoute } from "../src/platforms.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -140,4 +140,14 @@ test("an address stored before the app moved is rewritten, not followed", () => 
   assert.equal(normaliseAppUrl("https://opennotetaker.app/"), "https://opennotetaker.app/");
   // Nonsense falls through to the default rather than throwing on every prompt.
   assert.equal(normaliseAppUrl("not a url"), null);
+});
+
+test("a handoff opens the consent screen, not the front door", () => {
+  // The app and the product page share one origin now, so the bare address
+  // shows the marketing copy with the app hidden behind it.
+  assert.equal(recordRoute("https://opennotetaker.app/"), "https://opennotetaker.app/#/record");
+  assert.equal(recordRoute("http://localhost:5173/"), "http://localhost:5173/#/record");
+  // An address that already carries a route is replaced, not appended to.
+  assert.equal(recordRoute("https://opennotetaker.app/#/library"), "https://opennotetaker.app/#/record");
+  assert.equal(recordRoute("nonsense"), "nonsense");
 });

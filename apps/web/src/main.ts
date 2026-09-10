@@ -142,6 +142,18 @@ async function boot(): Promise<void> {
     app.go("#/record");
   });
 
+  // The copy is for someone who has just arrived. Once they are in the
+  // library or the account screen it goes -- still in the HTML for a
+  // crawler, just not on screen underneath their notes.
+  // Derived, never assumed. Setting it to "" at boot regardless of the hash
+  // meant a deep link -- opennotetaker.app/#/record, which is what the hero
+  // button and every shared link are -- loaded with the marketing copy drawn
+  // over the app, and only corrected itself on a later hash *change*.
+  const showRoute = () => {
+    document.body.dataset.route = routeName(location.hash);
+  };
+  showRoute();
+  window.addEventListener("hashchange", showRoute);
   window.addEventListener("hashchange", () => void draw(app, root));
   await draw(app, root);
 
@@ -162,7 +174,12 @@ async function boot(): Promise<void> {
 }
 
 async function draw(app: App, root: HTMLElement): Promise<void> {
-  const hash = location.hash.replace(/^#\/?/, "");
+  // Routes are `#/name`. A bare `#anchor` links into the marketing copy
+  // that now shares this document -- `#how`, `#pricing`, `#faq` -- and
+  // without this the router reads those as route names, matches nothing
+  // and redraws the app over the section the reader was going to.
+  const raw = location.hash;
+  const hash = raw.startsWith("#/") ? raw.slice(2) : "";
   const [name = "", ...rest] = hash.split("/");
   // Leaving the record screen answers the extension's offer with "no". Held
   // any longer, a meeting the user walked away from would arm the next
@@ -177,7 +194,10 @@ async function draw(app: App, root: HTMLElement): Promise<void> {
     app.recorder?.active ? recordingBar(app) : null,
     topbar(app, name),
     body,
-    siteFooter(),
+    // No `siteFooter()` here any more. The app and the product page are one
+    // document, and that document ends with the site's own footer below the
+    // marketing copy -- two of them, one stacked inside the other, read as
+    // the page ending twice.
   );
   mount(root, shell);
 
@@ -284,21 +304,15 @@ function logo(): Node {
   return svg;
 }
 
-function siteFooter(): Node {
-  return el(
-    "footer.site",
-    el(
-      "div.row",
-      el("span", t("shell.footerTagline")),
-      el("a", { href: "#/privacy" }, t("shell.footerPrivacy")),
-      el(
-        "a",
-        { href: "https://github.com/opentoolkitsg/opennotetaker", rel: "noopener" },
-        t("shell.footerSource"),
-      ),
-    ),
-  );
+/// Which route the address bar is on, or "" for the landing page.
+///
+/// Routes are `#/name`. A bare `#anchor` links into the marketing copy and is
+/// not a route: reading those as route names matches nothing and would hide
+/// the very copy the anchor points at.
+export function routeName(hash: string): string {
+  return hash.startsWith("#/") ? hash.slice(2).split("/")[0]! : "";
 }
+
 
 void boot();
 

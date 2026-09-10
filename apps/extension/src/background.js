@@ -25,7 +25,7 @@
 // and the picker one press away. A failed shortcut must never be a failed
 // recording.
 
-import { detect, normaliseAppUrl } from "./platforms.js";
+import { detect, normaliseAppUrl, recordRoute } from "./platforms.js";
 
 const DEFAULT_APP_URL = "https://opennotetaker.app/";
 const HANDOFF = "opennotetaker:handoff";
@@ -249,7 +249,11 @@ async function handOver(tabId, payload) {
 /// id is bound to the consumer tab's origin, and the origin at that moment is
 /// not the app's.
 async function openApp() {
-  const url = await appUrl();
+  // The consent screen, not the front door. A handoff exists to fill that
+  // screen in, and since the app and the product page moved to one origin the
+  // front door shows the marketing copy with the app hidden behind it — so
+  // opening the bare address delivered the handoff to a page nobody could see.
+  const url = recordRoute(await appUrl());
   const origin = new URL(url).origin;
   const all = await chrome.tabs.query({});
   const open =

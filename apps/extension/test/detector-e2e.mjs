@@ -110,7 +110,9 @@ try {
     await card.textContent(),
   );
 
-  const started = await app.locator("h1").first().textContent();
+  // `main h1`, not `h1`: the page carries the landing copy's heading as well
+  // now that the site and the app share one origin.
+  const started = await app.locator("main h1").first().textContent();
   check("nothing is recording yet", started.includes("Before you record"), started);
 
   const ticked = await app

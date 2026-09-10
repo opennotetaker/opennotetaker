@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en" class="oa-dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy &mdash; OpenNoteTaker</title>
+<meta name="description" content="Every host OpenNoteTaker can contact, what is in each request, and what is stored where. Audio never leaves your device." />
+<meta name="robots" content="index, follow" />
+<meta name="theme-color" content="#0a0a0a" />
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="canonical" href="https://opennotetaker.app/privacy.html" />
+<link rel="stylesheet" href="/tokens/styles.css" />
+<style>
+  /* Page-level layout only. Every colour, size, radius and duration below
+     comes from the shared design tokens — nothing here invents a value.
+     The product's accent is slot 21, registered in tokens/ACCENT-SLOTS.md. */
+
+  :root {
+    --accent: var(--accent-21);
+    /* The slot carries white type at 6.2:1 as a *fill*, but as small text on a
+       dark ground it is only 3.4:1 — the caveat recorded against brass, and it
+       applies to every deepened slot. Small type in the accent (the eyebrow,
+       the trailing dot of the wordmark) uses this lifted derivation instead of
+       a second colour picked beside it. */
+    --accent-text: color-mix(in oklab, var(--accent) 62%, var(--white));
+  }
+
+  body {
+    background: var(--bg-page);
+    color: var(--text-body);
+    margin: 0;
+  }
+
+  .wrap {
+    max-width: 66rem;
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* --- header --- */
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in oklab, var(--bg-page) 88%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: var(--border-width) solid var(--border-hairline);
+  }
+
+  .site-header .wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    height: 4rem;
+  }
+
+  /* The family wordmark: a tinted tile holding the product's own glyph, then
+     "Open" in muted grey, the product name, and a period in the accent. The
+     tile and the dot are the only things carrying it — brand colour is
+     reserved for primary buttons, on every product's page. */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    text-decoration: none;
+  }
+
+  .brand-tile {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: color-mix(in oklab, var(--accent) 16%, transparent);
+    color: var(--accent);
+  }
+
+  .brand-tile svg { display: block; }
+
+  .brand-word {
+    font: var(--weight-medium) 17px/1 var(--font-display, var(--font-sans));
+    letter-spacing: -0.04em;
+    color: var(--text-strong);
+  }
+
+  .brand-word .muted { color: var(--text-muted); }
+  .brand-word .dot { color: var(--accent-text); }
+
+  .site-header nav {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+  }
+
+  .site-header nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font: var(--weight-regular) var(--text-sm)/1 var(--font-sans);
+  }
+
+  .site-header nav a:hover { color: var(--text-strong); }
+
+  @media (max-width: 640px) {
+    .site-header nav a.hide-sm { display: none; }
+  }
+
+  /* --- buttons --- */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: var(--control-h-md);
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-md);
+    font: var(--weight-medium) var(--text-sm)/1 var(--font-sans);
+    text-decoration: none;
+    border: var(--border-width) solid transparent;
+    transition: var(--transition-control);
+    white-space: nowrap;
+  }
+
+  .btn--primary {
+    background: var(--accent);
+    color: var(--white);
+  }
+
+  .btn--primary:hover {
+    background: color-mix(in oklab, var(--accent) 82%, var(--black));
+  }
+
+  .btn--ghost {
+    border-color: var(--border-strong);
+    color: var(--text-strong);
+  }
+
+  .btn--ghost:hover { background: var(--surface-hover); }
+
+  /* --- hero --- */
+
+  .hero { padding: var(--space-12) 0 var(--space-10); }
+
+  .hero h1 {
+    font: var(--weight-medium) clamp(2.4rem, 6.2vw, 4.1rem)/1.03 var(--font-display, var(--font-sans));
+    letter-spacing: -0.035em;
+    color: var(--text-strong);
+    margin: 0 0 var(--space-5);
+    max-width: 17ch;
+  }
+
+  .hero p.lead {
+    font: var(--weight-regular) var(--text-lg)/1.5 var(--font-sans);
+    color: var(--text-muted);
+    margin: 0 0 var(--space-7);
+    max-width: 52ch;
+  }
+
+  .hero .actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-5);
+  }
+
+  .hero .footnote {
+    font: var(--weight-regular) var(--text-xs)/1.6 var(--font-sans);
+    color: var(--text-faint);
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  /* --- sections --- */
+
+  section { padding: var(--space-16) 0; }
+
+  section + section { border-top: var(--border-width) solid var(--border-hairline); }
+
+  .eyebrow {
+    font: var(--weight-medium) var(--text-xs)/1 var(--font-sans);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--accent-text);
+    margin: 0 0 var(--space-3);
+  }
+
+  section h2 {
+    font: var(--weight-medium) clamp(1.6rem, 3.4vw, 2.3rem)/1.12 var(--font-display, var(--font-sans));
+    letter-spacing: -0.03em;
+    color: var(--text-strong);
+    margin: 0 0 var(--space-4);
+    max-width: 22ch;
+  }
+
+  section p.sub {
+    font: var(--weight-regular) var(--text-md)/1.55 var(--font-sans);
+    color: var(--text-muted);
+    margin: 0 0 var(--space-8);
+    max-width: 58ch;
+  }
+
+  /* --- the comparison, which is the whole argument --- */
+
+  .versus {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: var(--space-4);
+  }
+
+  .versus > div {
+    border: var(--border-width) solid var(--border-hairline);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    background: var(--surface-card);
+  }
+
+  .versus h3 {
+    font: var(--weight-medium) var(--text-md)/1.3 var(--font-sans);
+    color: var(--text-strong);
+    margin: 0 0 var(--space-3);
+  }
+
+  .versus ul { margin: 0; padding: 0; list-style: none; }
+
+  .versus li {
+    font: var(--weight-regular) var(--text-sm)/1.5 var(--font-sans);
+    color: var(--text-muted);
+    padding-left: 1.5rem;
+    position: relative;
+    margin-bottom: var(--space-3);
+  }
+
+  .versus li:last-child { margin-bottom: 0; }
+
+  /* A 7px dot, which is the other permitted use of the accent. The "them"
+     column uses the hairline colour instead: this is a factual comparison,
+     not a red-cross/green-tick scoreboard. */
+  .versus li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 7px;
+    height: 7px;
+    border-radius: var(--radius-full);
+    background: var(--accent);
+  }
+
+  .versus .them li::before { background: var(--border-strong); }
+
+  /* --- steps --- */
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--space-6);
+    counter-reset: step;
+  }
+
+  .steps > div { counter-increment: step; }
+
+  .steps h3 {
+    font: var(--weight-medium) var(--text-md)/1.3 var(--font-sans);
+    color: var(--text-strong);
+    margin: 0 0 var(--space-2);
+  }
+
+  .steps h3::before {
+    content: counter(step);
+    display: inline-grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    margin-right: var(--space-3);
+    border-radius: var(--radius-full);
+    background: color-mix(in oklab, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font: var(--weight-medium) var(--text-xs)/1 var(--font-mono);
+    vertical-align: 0.05em;
+  }
+
+  .steps p {
+    font: var(--weight-regular) var(--text-sm)/1.55 var(--font-sans);
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* --- pricing --- */
+
+  .price-table {
+    width: 100%;
+    border-collapse: collapse;
+    font: var(--weight-regular) var(--text-sm)/1.5 var(--font-sans);
+  }
+
+  .price-table th,
+  .price-table td {
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--border-width) solid var(--border-hairline);
+  }
+
+  .price-table th {
+    font-weight: var(--weight-medium);
+    color: var(--text-faint);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+  }
+
+  .price-table td { color: var(--text-muted); }
+  .price-table td:first-child { color: var(--text-body); }
+  .price-table .free { color: var(--accent-text); font-weight: var(--weight-medium); }
+
+  /* --- faq --- */
+
+  .faq details {
+    border-bottom: var(--border-width) solid var(--border-hairline);
+    padding: var(--space-4) 0;
+  }
+
+  .faq summary {
+    font: var(--weight-medium) var(--text-md)/1.4 var(--font-sans);
+    color: var(--text-strong);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .faq summary::-webkit-details-marker { display: none; }
+
+  .faq summary::after {
+    content: "+";
+    color: var(--text-faint);
+    font-weight: var(--weight-regular);
+    flex: none;
+  }
+
+  .faq details[open] summary::after { content: "\2212"; }
+
+  .faq p {
+    font: var(--weight-regular) var(--text-sm)/1.6 var(--font-sans);
+    color: var(--text-muted);
+    margin: var(--space-3) 0 0;
+    max-width: 62ch;
+  }
+
+  /* --- footer --- */
+
+  footer {
+    border-top: var(--border-width) solid var(--border-hairline);
+    padding: var(--space-8) 0 var(--space-10);
+  }
+
+  footer .wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+    align-items: center;
+  }
+
+  footer a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font: var(--weight-regular) var(--text-sm)/1 var(--font-sans);
+  }
+
+  footer a:hover { color: var(--text-strong); }
+
+  footer .rights {
+    margin-left: auto;
+    color: var(--text-faint);
+    font: var(--weight-regular) var(--text-xs)/1 var(--font-sans);
+  }
+
+  @media (max-width: 640px) {
+    footer .rights { margin-left: 0; width: 100%; }
+  }
+</style>
+
+<style>
+  .doc { max-width: 44rem; padding-top: var(--space-10); padding-bottom: var(--space-16); }
+  .doc h1 {
+    font: var(--weight-medium) clamp(2rem, 5vw, 2.9rem)/1.08 var(--font-display, var(--font-sans));
+    letter-spacing: -0.035em; color: var(--text-strong); margin: 0 0 var(--space-4);
+  }
+  .doc h2 {
+    font: var(--weight-medium) var(--text-lg)/1.3 var(--font-sans);
+    color: var(--text-strong); margin: var(--space-10) 0 var(--space-3); max-width: none;
+  }
+  .doc p, .doc li {
+    font: var(--weight-regular) var(--text-md)/1.65 var(--font-sans);
+    color: var(--text-muted);
+  }
+  .doc p { margin: 0 0 var(--space-4); }
+  .doc ul { margin: 0 0 var(--space-4); padding-left: var(--space-5); }
+  .doc li { margin-bottom: var(--space-2); }
+  .doc strong { color: var(--text-body); font-weight: var(--weight-medium); }
+  .doc table { width: 100%; border-collapse: collapse; margin: 0 0 var(--space-5); }
+  .doc th, .doc td {
+    text-align: left; padding: var(--space-3) var(--space-3);
+    border-bottom: var(--border-width) solid var(--border-hairline);
+    font: var(--weight-regular) var(--text-sm)/1.5 var(--font-sans); color: var(--text-muted);
+    vertical-align: top;
+  }
+  .doc th {
+    font-weight: var(--weight-medium); color: var(--text-faint);
+    font-size: var(--text-xs); letter-spacing: var(--tracking-wide); text-transform: uppercase;
+  }
+  .doc code {
+    font: var(--weight-regular) var(--text-sm)/1 var(--font-mono);
+    color: var(--text-body); background: var(--surface-hover);
+    padding: 0.15em 0.35em; border-radius: var(--radius-sm);
+  }
+  .updated { color: var(--text-faint); font-size: var(--text-sm); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="OpenNoteTaker home">
+      <span class="brand-tile">
+        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="currentColor"
+             stroke-width="2.8" stroke-linecap="round" aria-hidden="true">
+          <path d="M10 11v10M16 8v16M22 13v6" />
+        </svg>
+      </span>
+      <span class="brand-word"><span class="muted">Open</span>NoteTaker<span class="dot">.</span></span>
+    </a>
+    <nav><a href="/">Back to the site</a><a href="/#/record">Record a meeting</a></nav>
+  </div>
+</header>
+
+<main class="wrap doc">
+  <h1>What leaves your device</h1>
+  <p class="updated">Last updated 8 September 2026.</p>
+
+  <p>
+    This is the long form of the privacy centre inside the app. Everything on
+    this page is checkable with a browser network panel rather than taken on
+    trust &mdash; the application&rsquo;s own test suite asserts it on every
+    build, and fails the build if a request appears that is not listed here.
+  </p>
+
+  <h2>Every host the application can contact</h2>
+  <table>
+    <thead><tr><th scope="col">Host</th><th scope="col">When</th><th scope="col">What is in the request</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>huggingface.co</code> and its CDN</td>
+        <td>The first time you transcribe with a given model, and never again</td>
+        <td>Nothing of yours. It is a download &mdash; the model weights come to you</td>
+      </tr>
+      <tr>
+        <td>The site itself</td>
+        <td>Loading the page, and ONNX Runtime&rsquo;s WebAssembly binary</td>
+        <td>Nothing of yours</td>
+      </tr>
+      <tr>
+        <td><code>auth.opennotetaker.app</code></td>
+        <td>When you open the Account page, and while signed in</td>
+        <td>Your sign-in method and your credit balance. No transcripts, ever</td>
+      </tr>
+      <tr>
+        <td><code>gateway.opennotetaker.app</code></td>
+        <td>Only when you press a button that shows a price</td>
+        <td>The text that button names, and nothing else</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    There is <strong>no analytics script, no tag manager, no error reporter and
+    no font CDN</strong>, on this page or in the application. The fonts are
+    served from this origin, and so is ONNX Runtime&rsquo;s binary &mdash;
+    specifically so that it is not a second, silent third party. You can confirm
+    all of that in view-source.
+  </p>
+
+  <h2>The meeting detector extension contacts nothing at all</h2>
+  <p>
+    It has no network code in it. It reads the URL of tabs on four meeting sites,
+    draws a prompt, and hands a tab to the application. It does not read page
+    content, never sees audio, and has no server to report to. Its entire source
+    is four small files, and <code>grep -r fetch</code> over them comes back
+    empty.
+  </p>
+
+  <h2>Audio never goes anywhere</h2>
+  <p>
+    Not as an upload, not as a sample, not to improve a model. The three paid
+    routes take <strong>text</strong> &mdash; the transcript you already have and
+    can read on screen.
+  </p>
+  <p>
+    That is a property of the wire format rather than a policy that could be
+    revised. The request bodies have no field for audio, the application shows
+    you the exact body before sending it, and the backend&rsquo;s test suite
+    includes a case that smuggles base64 audio into an extra field and asserts it
+    never reaches the vendor.
+  </p>
+
+  <h2>What is stored, and where</h2>
+  <p>
+    In your browser&rsquo;s own storage, on the device you recorded on. Nothing
+    syncs. There is no server-side copy to subpoena, breach or lose.
+  </p>
+  <ul>
+    <li><strong>Transcripts, titles and speaker names</strong> &mdash; kept until you delete them.</li>
+    <li><strong>The audio</strong> &mdash; discarded when you close a note, unless you turn on &ldquo;keep the audio&rdquo;, which is off by default.</li>
+    <li><strong>Your settings</strong> &mdash; interface language, model choice, and whether to keep audio.</li>
+  </ul>
+  <p>
+    Clearing site data for this origin removes all of it, immediately and
+    permanently. We cannot recover it, because we never had it.
+  </p>
+
+  <h2>If you make an account</h2>
+  <p>
+    An account is needed for exactly three things: AI-written minutes, questions
+    across your meetings, and translating a finished transcript. It holds a
+    sign-in method and a credit balance. It does not hold recordings,
+    transcripts or titles.
+  </p>
+  <p>
+    Signing in with Google visibly passes through our account provider&rsquo;s
+    own domain on the way back, and Google&rsquo;s consent screen names it. That
+    is how the OAuth hop works and we would rather say so here than have you find
+    it in the address bar.
+  </p>
+
+  <h2>Consent to record</h2>
+  <p>
+    Whether you may record a meeting depends on where everyone in it is, and this
+    application cannot answer that for you. It does not try. Every recording
+    opens on a consent screen with words you can read out, and there is no way to
+    skip it or ask it to stop appearing.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    <a href="https://github.com/opennotetaker/OpenNoteTaker/issues" style="color: var(--accent-text)">Open an issue</a>
+    &mdash; the source is public, and a privacy claim you can read the code for is
+    worth more than one you can only email about.
+  </p>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a href="/">Home</a>
+    <a href="/#/record">Record a meeting</a>
+    <a href="https://github.com/opennotetaker/OpenNoteTaker">Source</a>
+    <span class="rights">MIT / Apache-2.0. No analytics on this page.</span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -184,3 +184,17 @@ export function normaliseAppUrl(stored) {
     return null;
   }
 }
+
+/// The address of the app's consent screen, given wherever the app lives.
+///
+/// Kept next to the URL normaliser and away from `background.js` so a node
+/// test can import it: that file registers a chrome listener at import time.
+export function recordRoute(base) {
+  try {
+    const url = new URL(base);
+    url.hash = "#/record";
+    return url.toString();
+  } catch {
+    return base;
+  }
+}
