@@ -26,7 +26,15 @@ const BASE = `http://127.0.0.1:${PORT}/`;
 // `localhost`, which on a machine with IPv6 resolves to ::1 only -- and then
 // this script's fetch to 127.0.0.1 is refused by a server that is running
 // perfectly well.
-const server = spawn("npx", ["vite", "preview", "--host", "127.0.0.1", "--port", String(PORT), "--strictPort"], {
+// `SITE_ROOT` serves the composed site — the product page from the private
+// site repo with this app inside it — rather than the app's own `dist/`.
+// After the website moved out, `dist/` is a bare shell with none of the copy
+// a third of these checks assert on, and the masking check in particular
+// reads what is *painted*: pointed at the shell it would pass by having
+// nothing to paint. `deploy.sh` in the site repo sets it.
+const previewArgs = ["vite", "preview", "--host", "127.0.0.1", "--port", String(PORT), "--strictPort"];
+if (process.env.SITE_ROOT) previewArgs.push("--outDir", process.env.SITE_ROOT);
+const server = spawn("npx", previewArgs, {
   stdio: ["ignore", "pipe", "inherit"],
 });
 process.on("exit", () => server.kill());
@@ -79,16 +87,22 @@ const check = (name, condition, detail = "") => {
 await page.goto(BASE, { waitUntil: "networkidle" });
 
 // On the first route the landing copy is what is on screen and the app is
-// mounted behind it; both carry an h1, so "did it boot" is about the app
-// having rendered, not about which heading happens to be visible.
+// mounted behind it, so "did it boot" is about the app having rendered, not
+// about which heading happens to be visible.
+//
+// `:is(h1, h2.h1)` rather than `h1`: the home view's title is an `h2` now,
+// because a document with the landing hero *and* an app view on it had two
+// `h1`s and therefore no outline. Every other view is still the only heading
+// on screen when it is up, so it kept `h1`. The locator is "the view's
+// title", which is what every assertion below actually means.
 check(
   "the app boots",
-  (await page.locator("main h1").first().textContent())?.trim().length > 0,
+  (await page.locator("main :is(h1, h2.h1)").first().textContent())?.trim().length > 0,
 );
 check("…with the landing copy in front of it", await page.locator(".site-chrome .hero h1").isVisible());
 check(
   "the landing page leads with the promise",
-  (await page.locator("main h1").first().textContent())?.includes("Nothing leaves"),
+  (await page.locator("main :is(h1, h2.h1)").first().textContent())?.includes("Nothing leaves"),
 );
 
 // --- the engine, through the same boundary the app uses ---------------------
@@ -269,7 +283,7 @@ for (const [route, expect, mayContact] of [
   const seen = watchRequests();
   await page.goto(BASE + route);
   await page.waitForTimeout(400);
-  const heading = await page.locator("main h1").first().textContent();
+  const heading = await page.locator("main :is(h1, h2.h1)").first().textContent();
   check(`${route} renders`, heading?.trim() === expect, `got ${JSON.stringify(heading)}`);
 
   const unexpected = seen().filter((host) => !mayContact.includes(host));
@@ -589,7 +603,7 @@ await page.waitForTimeout(200);
       const el = document.querySelector(".site-chrome");
       return el ? getComputedStyle(el).display !== "none" : false;
     })(),
-    heading: document.querySelector("main h1")?.textContent?.trim() ?? "",
+    heading: document.querySelector("main :is(h1, h2.h1)")?.textContent?.trim() ?? "",
   }));
   check("a deep link sets the route on load", state.route === "record", JSON.stringify(state));
   check("…hides the landing copy", !state.chromeVisible);
@@ -768,7 +782,7 @@ check(
   });
   const mic = await recording.newPage();
   await mic.goto(BASE + "#/record", { waitUntil: "networkidle" });
-  await mic.waitForSelector("main h1");
+  await mic.waitForSelector("main :is(h1, h2.h1)");
 
   // Tab audio cannot be granted to a driven browser -- the share picker is
   // browser chrome -- so this records the microphone alone, which is exactly
@@ -797,7 +811,7 @@ check(
   check("switching input while recording is confirmed", true);
   check(
     "the recording is still running afterwards",
-    (await mic.locator("main h1").first().textContent())?.includes("Recording"),
+    (await mic.locator("main :is(h1, h2.h1)").first().textContent())?.includes("Recording"),
     `clock was ${elapsedBefore}`,
   );
 
@@ -808,7 +822,7 @@ check(
   await mic.waitForTimeout(500);
   check(
     "discarding returns to the start",
-    !(await mic.locator("main h1").first().textContent())?.includes("Recording"),
+    !(await mic.locator("main :is(h1, h2.h1)").first().textContent())?.includes("Recording"),
   );
 
   await recording.close();
@@ -823,7 +837,7 @@ check(
   await page.waitForTimeout(300);
   await chooseLanguage(page, "zh-Hans");
   await page.waitForTimeout(300);
-  const heading = (await page.locator("main h1").first().textContent()) ?? "";
+  const heading = (await page.locator("main :is(h1, h2.h1)").first().textContent()) ?? "";
   check("the interface switches to Simplified Chinese", heading.includes("没有机器人"), heading);
   check(
     "the document language attribute follows",
@@ -832,12 +846,12 @@ check(
 
   await page.reload();
   await page.waitForTimeout(400);
-  const after = (await page.locator("main h1").first().textContent()) ?? "";
+  const after = (await page.locator("main :is(h1, h2.h1)").first().textContent()) ?? "";
   check("the choice survives a reload", after.includes("没有机器人"), after);
 
   await chooseLanguage(page, "zh-Hant");
   await page.waitForTimeout(300);
-  const hant = (await page.locator("main h1").first().textContent()) ?? "";
+  const hant = (await page.locator("main :is(h1, h2.h1)").first().textContent()) ?? "";
   check("Traditional is a different translation, not a converted one", hant.includes("沒有機器人"), hant);
 
   // The consent screen is the one place the words have to be right, so it is
