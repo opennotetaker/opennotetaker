@@ -45,6 +45,12 @@ export interface Locale {
   /// The endonym. Somebody looking for their own language looks for the word
   /// they call it, not for what English calls it.
   label: string;
+  /// Two or three characters for the topbar, where the full endonym does not
+  /// fit. Shown beside the glyph, so the control says which language is active
+  /// as well as what it does. Kept identical to opencapture's and
+  /// openpdfedit's lists — the suite's picker is one control in three apps,
+  /// and a reader who learns it in one should find it unchanged in the next.
+  short: string;
   catalogue: Catalogue;
   /// Passed to `toLocaleString` for dates and times, so the whole interface
   /// agrees rather than the prose being Chinese and the timestamps American.
@@ -61,14 +67,14 @@ export interface Locale {
 /// own language looks for the word they call it, so 日本語 stays 日本語 in the
 /// German picker.
 export const LOCALES: Locale[] = [
-  { code: "en", label: "English", catalogue: en, intl: "en" },
-  { code: "zh-Hans", label: "简体中文", catalogue: zhHans, intl: "zh-Hans" },
-  { code: "zh-Hant", label: "繁體中文", catalogue: zhHant, intl: "zh-Hant" },
-  { code: "ja", label: "日本語", catalogue: ja, intl: "ja" },
-  { code: "ko", label: "한국어", catalogue: ko, intl: "ko" },
-  { code: "de", label: "Deutsch", catalogue: de, intl: "de" },
-  { code: "es", label: "Español", catalogue: es, intl: "es" },
-  { code: "pt", label: "Português", catalogue: pt, intl: "pt" },
+  { code: "en", label: "English", catalogue: en, intl: "en", short: "EN" },
+  { code: "zh-Hans", label: "简体中文", catalogue: zhHans, intl: "zh-Hans", short: "简" },
+  { code: "zh-Hant", label: "繁體中文", catalogue: zhHant, intl: "zh-Hant", short: "繁" },
+  { code: "ja", label: "日本語", catalogue: ja, intl: "ja", short: "日本語" },
+  { code: "ko", label: "한국어", catalogue: ko, intl: "ko", short: "한국어" },
+  { code: "de", label: "Deutsch", catalogue: de, intl: "de", short: "DE" },
+  { code: "es", label: "Español", catalogue: es, intl: "es", short: "ES" },
+  { code: "pt", label: "Português", catalogue: pt, intl: "pt", short: "PT" },
 ];
 
 const STORAGE_KEY = "opennotetaker.locale";

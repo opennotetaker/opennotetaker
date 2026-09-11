@@ -16,6 +16,13 @@
     <link rel="stylesheet" href="./site.css" />
   </head>
   <body>
+    <!-- The navigation, first in the document and first on the screen.
+         It is the app's own topbar, rendered here rather than inside #app,
+         because #app sits between the two blocks of marketing copy: left
+         there the bar appeared eight hundred pixels down the page, below the
+         hero, and only became sticky once the reader had scrolled past it. -->
+    <header id="nav"></header>
+
     <!-- Static, so a crawler reads the copy without running anything. The
          app hides it on every route but the first -- see `data-route`. -->
     <div class="site-chrome">

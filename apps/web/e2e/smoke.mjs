@@ -51,6 +51,22 @@ const watchRequests = () => {
   return () => [...contacted];
 };
 
+
+/// Choose a language through the topbar control.
+///
+/// It was a `<select>` and is now an icon button opening a menu of endonyms,
+/// matching openpdfedit's and opencapture's. The tests drive it the way a
+/// person does rather than reaching for the underlying value.
+async function chooseLanguage(page, code) {
+  // Open it only if it is shut. The button toggles, so a caller that has
+  // already opened the menu — to read what is in it, say — would otherwise
+  // close it here and then wait for an item that is no longer on screen.
+  const button = page.locator(".lang__button");
+  if ((await button.getAttribute("aria-expanded")) !== "true") await button.click();
+  await page.locator(`.lang__item[lang="${code}"]`).click();
+  await page.waitForTimeout(250);
+}
+
 const failures = [];
 const check = (name, condition, detail = "") => {
   if (condition) console.log(`  ok  ${name}`);
@@ -595,10 +611,9 @@ await page.waitForTimeout(200);
 {
   await page.goto(BASE + "#/library");
   await page.waitForTimeout(200);
-  const picker = page.locator("select.lang");
-
-  const offered = await picker.locator("option").evaluateAll((os) =>
-    os.map((o) => ({ code: o.value, label: o.textContent.trim() })));
+  await page.locator(".lang__button").click();
+  const offered = await page.locator(".lang__item").evaluateAll((items) =>
+    items.map((i) => ({ code: i.getAttribute("lang"), label: i.textContent.trim() })));
   check("all eight languages are offered", offered.length === 8,
     offered.map((o) => o.code).join(","));
   // Endonyms: somebody looks for the word they call their own language.
@@ -606,11 +621,14 @@ await page.waitForTimeout(200);
     ["English", "简体中文", "繁體中文", "日本語", "한국어", "Deutsch", "Español", "Português"]
       .every((label) => offered.some((o) => o.label === label)),
     offered.map((o) => o.label).join(" | "));
+  // Each item declares its own language, so a screen reader switches voice
+  // and Han characters get the right glyphs inside the menu too.
+  check("…and each item declares its own lang",
+    offered.every((o) => o.code), offered.map((o) => o.code).join(","));
 
   const seen = new Map();
   for (const { code } of offered) {
-    await picker.selectOption(code);
-    await page.waitForTimeout(250);
+    await chooseLanguage(page, code);
     // Not the heading: "Biblioteca" is the same word in Spanish and in
     // Portuguese, so it proves nothing about either. The search placeholder is
     // a whole sentence and differs in all eight.
@@ -631,14 +649,12 @@ await page.waitForTimeout(200);
     [...seen].map(([c, h]) => `${c}=${h}`).join(" | "));
 
   // The choice has to survive a reload, or the picker is a per-visit toy.
-  await picker.selectOption("ja");
-  await page.waitForTimeout(200);
+  await chooseLanguage(page, "ja");
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForTimeout(400);
   check("the choice survives a reload",
     (await page.evaluate(() => document.documentElement.lang)) === "ja");
-  await page.locator("select.lang").selectOption("en");
-  await page.waitForTimeout(200);
+  await chooseLanguage(page, "en");
 }
 
 // Matching widens rather than requiring equality. A browser asking for pt-BR
@@ -805,7 +821,7 @@ check(
 {
   await page.goto(BASE);
   await page.waitForTimeout(300);
-  await page.selectOption("select.lang", "zh-Hans");
+  await chooseLanguage(page, "zh-Hans");
   await page.waitForTimeout(300);
   const heading = (await page.locator("main h1").first().textContent()) ?? "";
   check("the interface switches to Simplified Chinese", heading.includes("没有机器人"), heading);
@@ -819,7 +835,7 @@ check(
   const after = (await page.locator("main h1").first().textContent()) ?? "";
   check("the choice survives a reload", after.includes("没有机器人"), after);
 
-  await page.selectOption("select.lang", "zh-Hant");
+  await chooseLanguage(page, "zh-Hant");
   await page.waitForTimeout(300);
   const hant = (await page.locator("main h1").first().textContent()) ?? "";
   check("Traditional is a different translation, not a converted one", hant.includes("沒有機器人"), hant);
@@ -833,7 +849,7 @@ check(
 
   await page.goto(BASE);
   await page.waitForTimeout(300);
-  await page.selectOption("select.lang", "en");
+  await chooseLanguage(page, "en");
   await page.waitForTimeout(300);
 }
 

@@ -215,23 +215,93 @@ nav.tabs a[aria-current="page"] {
   color: var(--text-strong);
 }
 
-/* The language switch sits in the header, not in settings: a reader who cannot
-   read the interface cannot navigate to a settings page to fix that. Sized to
-   its content so CJK and Latin option labels both fit without clipping. */
-select.lang {
-  width: auto;
-  height: var(--control-h-sm);
-  padding: 0 var(--space-2);
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-  background: transparent;
-  border-color: transparent;
-  margin-inline-start: var(--space-2);
+/* The language control, matching openpdfedit's and opencapture's.
+   An icon button showing the *current* language, opening a menu of endonyms.
+   It was a bare <select> here, which named the languages but not the control,
+   and looked like nothing else in the suite. */
+.lang {
+  position: relative;
+  display: flex;
 }
-select.lang:hover {
+
+.lang__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--control-h-sm, 28px);
+  padding: 0 var(--space-2);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.lang__button:hover {
   background: var(--surface-hover);
-  color: var(--text-body);
-  border-color: var(--border-hairline);
+  color: var(--text-strong);
+}
+
+.lang__button[aria-expanded="true"] {
+  background: var(--surface-selected);
+  color: var(--text-strong);
+}
+
+.lang__short {
+  line-height: 1;
+}
+
+.lang__menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  inset-inline-end: 0;
+  z-index: 30;
+  min-width: 168px;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  background: var(--surface-card);
+  border: var(--border-width) solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.lang__item {
+  display: flex;
+  align-items: center;
+  /* Not just `text-align`: the label is a flex item here, so alignment is the
+     container's job. Without this the eight names centre themselves, which is
+     the ragged column the leading tick exists to avoid. */
+  justify-content: flex-start;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text-strong);
+  text-align: start;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.lang__item:hover {
+  background: var(--surface-hover);
+}
+
+.lang__item[data-on] {
+  color: var(--accent);
+}
+
+/* The tick leads the name rather than trailing it, so eight names in eight
+   scripts stay left-aligned instead of ragging right. */
+.lang__item[data-on]::before {
+  content: "\2713";
+  margin-inline-start: calc(var(--space-3) * -1);
+  width: var(--space-3);
 }
 
 main {

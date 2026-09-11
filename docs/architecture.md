@@ -219,6 +219,23 @@ Chinese decided on script before either, because `zh-TW` falling through to
 `zh` hands a Taipei reader Simplified characters. `pt-BR`, `es-419` and
 `de-AT` used to get English — only `zh` and `en` were understood at all.
 
+**The language control is the suite's, not this app's.** Ported from
+`openpdfedit/apps/desktop/src/lib/LanguagePicker.svelte`, with the locale list
+matching `opencapture`'s: the Lucide `languages` glyph, the *current*
+language's short form beside it, and a menu of endonyms with the tick leading
+each name rather than trailing it — eight names in eight scripts rag right
+otherwise. It was a bare `<select>` here, which named the languages but not the
+control, and resembled nothing else in the suite. A reader who learns it in one
+app should find it unchanged in the next.
+
+**The navigation is mounted outside `#app`.** The app and the product page
+share one document, and `#app` sits between the two blocks of marketing copy —
+so a topbar rendered inside it appeared eight hundred pixels down the page and
+only became sticky after the reader had scrolled past the hero. It renders into
+its own `#nav` at the top of the document instead, and *not* wrapped in
+`.shell`, which is `min-height: 100dvh` and made the header a full viewport
+tall.
+
 **The subtitle and document exporters disagree on purpose.** SRT and WebVTT
 must preserve Whisper's cue boundaries exactly; a merged cue is a wall of text
 that outlasts the sentence. Text, Markdown and HTML must do the opposite,
@@ -288,7 +305,7 @@ calibration is checked on speech. The fixtures are macOS `say` voices, so they
 are regenerable and carry nobody's actual voice; `npm run smoke` runs the same
 one-speaker file through the wasm the app calls.
 
-`npm run smoke` — 126 checks, driving the real built bundle in a real Chromium.
+`npm run smoke` — 127 checks, driving the real built bundle in a real Chromium.
 It stubs transcription at the one seam where model output enters the app,
 because downloading hundreds of megabytes per CI run to test somebody else's
 inference engine is not a test of this application. Everything downstream of

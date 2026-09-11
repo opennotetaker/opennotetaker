@@ -11,7 +11,7 @@ import "./styles.css";
 import * as engine from "./engine";
 import { el, mount } from "./lib/dom";
 import { connect as connectDetector, type Handoff, onHandoff } from "./lib/ext-bridge";
-import { current, initialLocale, LOCALES, setLocale, t, type LocaleCode } from "./lib/i18n";
+import { current, initialLocale, LOCALES, setLocale, t } from "./lib/i18n";
 import { Recorder } from "./lib/recorder";
 import {
   DEFAULT_SETTINGS,
@@ -190,10 +190,20 @@ async function draw(app: App, root: HTMLElement): Promise<void> {
   const view = routes[name] ?? routes[""]!;
 
   const body = el("div");
+  // The bar goes in its own mount at the top of the document; #app sits
+  // between the two blocks of marketing copy, and anything rendered into it
+  // starts most of a screen down.
+  const nav = document.getElementById("nav");
+  if (nav) {
+    // Not wrapped in `.shell`: that is the app's root and is `min-height:
+    // 100dvh`, so wrapping the bar in one made the header a full viewport tall
+    // and pushed the whole page down behind it.
+    mount(nav, app.recorder?.active ? recordingBar(app) : null, topbar(app, name));
+  }
   const shell = el(
     "div.shell",
-    app.recorder?.active ? recordingBar(app) : null,
-    topbar(app, name),
+    nav ? null : app.recorder?.active ? recordingBar(app) : null,
+    nav ? null : topbar(app, name),
     body,
     // No `siteFooter()` here any more. The app and the product page are one
     // document, and that document ends with the site's own footer below the
@@ -268,28 +278,115 @@ function topbar(app: App, route: string): Node {
   );
 }
 
-/// The language switch, in the header rather than buried in settings.
+/// The language switch, in the topbar beside the other controls.
 ///
-/// A reader who cannot read the interface cannot navigate to a settings page
-/// to fix that, so the control has to be somewhere they can find without
-/// reading anything: a fixed position, and every option written in its own
-/// script. Changing it redraws the whole app, because `t()` is read at render
-/// time and nothing caches a translated string.
+/// The suite's own control, ported from `openpdfedit/apps/desktop/src/lib/
+/// LanguagePicker.svelte` and matching `opencapture`'s list: the Lucide
+/// `languages` glyph, the *current* language's short form beside it, and a
+/// menu of endonyms. It was a bare `<select>` here, which was neither.
+///
+/// Three things the reference gets right and are kept:
+///
+/// - **Every language is named in its own script.** A picker listing
+///   "Japanese" in English is unusable by exactly the person who needs it.
+/// - **The button shows the current language, not the word "Language".** The
+///   same characters then say both what the control does and what it is set
+///   to — and it has visible text at all, which a phone needs, having no
+///   pointer to hover a tooltip with.
+/// - **The tick leads the name rather than trailing it**, so eight names in
+///   eight scripts stay left-aligned instead of ragging right.
 function languagePicker(app: App): Node {
-  const select = el(
-    "select.lang",
+  const active = current();
+  const menu = el("ul.lang__menu", { role: "menu", hidden: true });
+
+  const button = el(
+    "button.lang__button",
     {
+      type: "button",
       "aria-label": t("nav.language"),
-      onchange: (event: Event) => {
-        setLocale((event.target as HTMLSelectElement).value as LocaleCode);
-        app.render();
+      title: t("nav.language"),
+      "aria-haspopup": "menu",
+      "aria-expanded": "false",
+      onclick: (event: Event) => {
+        event.stopPropagation();
+        toggle(menu.hidden);
       },
     },
-    ...LOCALES.map((locale) =>
-      el("option", { value: locale.code, selected: locale.code === current().code }, locale.label),
-    ),
+    languagesGlyph(),
+    el("span.lang__short", active.short),
   );
-  return select;
+
+  function toggle(open: boolean): void {
+    menu.hidden = !open;
+    button.setAttribute("aria-expanded", String(open));
+  }
+
+  for (const locale of LOCALES) {
+    const on = locale.code === active.code;
+    menu.append(
+      el(
+        "li",
+        { role: "none" },
+        el(
+          "button.lang__item",
+          {
+            type: "button",
+            role: "menuitemradio",
+            "aria-checked": String(on),
+            lang: locale.intl,
+            ...(on ? { "data-on": "" } : {}),
+            onclick: () => {
+              setLocale(locale.code);
+              app.render();
+            },
+          },
+          locale.label,
+        ),
+      ),
+    );
+  }
+
+  // Close on an outside click or Escape, like any other menu. Registered on
+  // the document because the click that closes it lands anywhere.
+  const away = () => toggle(false);
+  const key = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      toggle(false);
+      button.focus();
+    }
+  };
+  document.addEventListener("click", away);
+  document.addEventListener("keydown", key);
+  // The topbar is rebuilt on every render, so the listeners have to go with
+  // the element they belong to or they accumulate one pair per navigation.
+  new MutationObserver((_, observer) => {
+    if (!button.isConnected) {
+      document.removeEventListener("click", away);
+      document.removeEventListener("keydown", key);
+      observer.disconnect();
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+
+  return el("div.lang", { onclick: (e: Event) => e.stopPropagation() }, button, menu);
+}
+
+/// Lucide `languages`, inline: the app draws its own handful of glyphs rather
+/// than carrying an icon library for six of them.
+function languagesGlyph(): Node {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", "15");
+  svg.setAttribute("height", "15");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  svg.setAttribute("aria-hidden", "true");
+  svg.innerHTML =
+    '<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/>' +
+    '<path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>';
+  return svg;
 }
 
 function logo(): Node {
