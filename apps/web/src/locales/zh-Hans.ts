@@ -180,6 +180,11 @@ export const zhHans: Catalogue = {
   "run.failedNote":
     "没有上传任何内容，也没有保存任何内容。如果录音不是静音，在「隐私」里换一个更大的模型通常会有帮助。",
   "run.back": "回到开始界面",
+  "run.checkingVoice": "正在检测人声",
+  "run.noSpeechTitle": "似乎没有人在说话",
+  "run.noSpeechBody":
+    "这段录音里没有检测到人声，因此没有进行转录。语音模型对任何声音都会写出点什么，所以静音、等候音乐或背景噪声会被转录成一整段没人说过的话。如果确实有人在说话——声音很小或很闷时可能会漏检——可以仍然转录。",
+  "run.transcribeAnyway": "仍然转录",
   "run.cancel": "取消",
 
   "note.missingTitle": "找不到这段录音",

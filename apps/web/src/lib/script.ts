@@ -72,7 +72,9 @@ export async function toSimplified(text: string): Promise<string> {
   if (!/[㐀-鿿豈-﫿]/.test(text)) return text;
   if (NOT_CHINESE.test(text)) return text;
   if (!table) {
-    const { TS_PAIRS } = await import("./hanzi");
+    // `.ts`, as opensubs writes it: Vite resolves a bare "./hanzi" and plain Node
+    // does not, and e2e/cleanup.mjs runs this module under Node directly.
+    const { TS_PAIRS } = await import("./hanzi.ts");
     const built = new Map<string, string>();
     for (let i = 0; i + 1 < TS_PAIRS.length; i += 2) {
       built.set(TS_PAIRS[i]!, TS_PAIRS[i + 1]!);

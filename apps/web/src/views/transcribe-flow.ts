@@ -16,7 +16,7 @@
 import * as engine from "../engine";
 import { el, mount } from "../lib/dom";
 import { t } from "../lib/i18n";
-import { transcribe } from "../lib/transcribe";
+import { transcribe, NoSpeechError } from "../lib/transcribe";
 import type { App } from "../main";
 import type { Note } from "../types";
 
@@ -32,6 +32,9 @@ export async function runTranscription(
   app: App,
   note: Note,
   getPcm: (report: (report: Report) => void) => Promise<Float32Array>,
+  /// Set when the person has already been told nobody seemed to be speaking and
+  /// chose to transcribe anyway, so the voice check does not ask them again.
+  { skipVoiceCheck = false }: { skipVoiceCheck?: boolean } = {},
 ): Promise<void> {
   const root = document.getElementById("app");
   if (!root) return;
@@ -92,6 +95,7 @@ export async function runTranscription(
       secondLanguage: app.settings.secondLanguage,
       translate: app.settings.translateToEnglish,
       signal: cancelled.signal,
+      skipVoiceCheck,
       onProgress: ({ fraction, note: text }) =>
         report({
           // The model download is the first quarter of the bar; the
@@ -144,6 +148,37 @@ export async function runTranscription(
   } catch (error) {
     if ((error as Error).name === "AbortError") {
       app.go("#/");
+      return;
+    }
+    // Nobody seemed to be speaking. An offer, not a refusal: the check is a
+    // model, and very quiet or muffled speech can fall under it, so the person
+    // who was in the room gets the last word. Everything else below is a real
+    // failure and gets no such button.
+    if (error instanceof NoSpeechError) {
+      mount(
+        root,
+        el(
+          "div.shell",
+          el(
+            "main",
+            el(
+              "div.card",
+              el("h2", t("run.noSpeechTitle")),
+              el("p.muted", t("run.noSpeechBody")),
+              el(
+                "div.row",
+                { style: "gap:.5rem;margin-top:1rem;flex-wrap:wrap" },
+                el(
+                  "button.primary",
+                  { onclick: () => void runTranscription(app, note, getPcm, { skipVoiceCheck: true }) },
+                  t("run.transcribeAnyway"),
+                ),
+                el("button", { onclick: () => app.go("#/") }, t("run.back")),
+              ),
+            ),
+          ),
+        ),
+      );
       return;
     }
     mount(

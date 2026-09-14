@@ -24,6 +24,8 @@
 import { TARGET_SAMPLE_RATE } from "./decode";
 import { isChinese, toSimplified, wantsTraditional } from "./script";
 import { t } from "./i18n";
+import { cleanUp, mergeBriefs, type Spoken } from "./cleanup";
+import { hasSpeech, speechSeconds } from "./vad";
 
 export interface TranscribeModel {
   id: string;
@@ -155,7 +157,7 @@ export async function support(): Promise<Support> {
 }
 
 export interface Progress {
-  stage: "model" | "transcribing";
+  stage: "listening" | "model" | "transcribing";
   fraction: number | null;
   note: string;
 }
@@ -182,6 +184,26 @@ export interface Options {
   translate?: boolean;
   signal?: AbortSignal;
   onProgress?: (progress: Progress) => void;
+  /// Transcribe even though the voice check heard nobody.
+  ///
+  /// The check is a model, not a certainty: very quiet or muffled speech can
+  /// fall under it. So a "nobody spoke" answer is an offer the person can
+  /// overrule from the error card, never a refusal they cannot get past.
+  skipVoiceCheck?: boolean;
+}
+
+/// Thrown when the voice check heard nobody speaking.
+///
+/// Its own class, so the caller can offer "transcribe it anyway" for this and
+/// only this. Every other failure is a real failure and gets no such button.
+export class NoSpeechError extends Error {
+  constructor(
+    /// Seconds of voice found, which is under the threshold but not always 0.
+    readonly heardSeconds: number,
+  ) {
+    super(t("run.noSpeechTitle"));
+    this.name = "NoSpeechError";
+  }
 }
 
 export interface Chunk {
@@ -586,6 +608,19 @@ export function looksInvented(text: string, seconds: number): boolean {
 }
 
 /// RMS between two times, in seconds.
+/// The language being read at `at` seconds, as a Whisper code.
+///
+/// `cleanUp` asks this about the middle of each line so it can tell a line
+/// written in a script the language does not use -- a Korean sign-off in a
+/// Chinese meeting -- from a line that is simply in another language.
+function languageAt(runs: LanguageRun[], at: number): string {
+  const sample = at * TARGET_SAMPLE_RATE;
+  for (const run of runs) {
+    if (sample < run.to) return run.language;
+  }
+  return runs[runs.length - 1]?.language ?? "en";
+}
+
 export function loudness(audio: Float32Array, from: number, to: number): number {
   const a = Math.max(0, Math.round(from * TARGET_SAMPLE_RATE));
   const b = Math.min(audio.length, Math.round(to * TARGET_SAMPLE_RATE));
@@ -969,6 +1004,38 @@ export async function transcribe(options: Options): Promise<Transcribed> {
   const device = await support();
   if (!device.ok) throw new Error(device.reason ?? t("error.unsupported"));
 
+  // Is anyone speaking at all? Ported from opensubs (APP-54).
+  //
+  // Whisper always writes something. It is sequence-to-sequence, so thirty
+  // seconds of audio produces tokens whatever is in them, and a meeting app
+  // meets exactly the audio that invites it: a muted call, a recording that
+  // caught only hold music, a tab left capturing an empty room. The rules in
+  // cleanup.ts cannot catch that, because each invented line is grammatical
+  // and none of them is wrong on its own; loudness cannot either, because hold
+  // music is not quiet.
+  //
+  // Silero VAD can, and it is cheap where it matters: it stops the moment it
+  // has heard 1.5 seconds of voice, so a real meeting answers in a fraction of
+  // a second and only a recording with nobody in it is scanned end to end --
+  // before the speech model is even downloaded, which on a first visit is
+  // 290 MB nobody then has to wait for.
+  if (!options.skipVoiceCheck) {
+    options.onProgress?.({ stage: "listening", fraction: null, note: t("run.checkingVoice") });
+    try {
+      const heard = await speechSeconds(options.pcm, (fraction) =>
+        options.onProgress?.({ stage: "listening", fraction, note: t("run.checkingVoice") }),
+      );
+      if (!hasSpeech(heard)) throw new NoSpeechError(heard.seconds);
+    } catch (error) {
+      if (error instanceof NoSpeechError) throw error;
+      // A voice check that cannot load must not stop a transcription. The
+      // worst case without it is the invented page this exists to prevent,
+      // which is a great deal better than refusing to transcribe anything.
+      console.warn("voice check unavailable, transcribing anyway:", error);
+    }
+    if (options.signal?.aborted) throw new DOMException("aborted", "AbortError");
+  }
+
   const model = options.model ?? DEFAULT_MODEL;
   options.onProgress?.({ stage: "model", fraction: null, note: t("run.loadingModel") });
 
@@ -1123,6 +1190,49 @@ export async function transcribe(options: Options): Promise<Transcribed> {
     options.onProgress,
     options.signal,
   );
+
+  // What the recogniser wrote that nobody said, ported from opensubs'
+  // cleanup.ts: its stock sign-offs ("Thank you for watching", "字幕由…提供"),
+  // bracketed non-speech ("[Music]"), a word looped over silence, a phrase
+  // echoed inside its own line, a line in a script its language does not use,
+  // and the same sentence written twice over a pause. Each rule judges the
+  // line against the audio under it, so "no, no, no" said aloud survives
+  // while "you you you" over hold music does not.
+  //
+  // After the gap filler, never before it -- opensubs found this the hard way.
+  // Removing a hallucinated line leaves a gap where it was, and a filler that
+  // ran afterwards would read that same silence again and write the line
+  // straight back in.
+  if (chunks.length > 0) {
+    const spoken: Spoken[] = chunks.map((c) => ({
+      start: c.start_ms / 1000,
+      end: c.end_ms / 1000,
+      text: c.text,
+    }));
+    const clean = cleanUp(spoken, {
+      level: (from, to) => loudness(options.pcm, from, to),
+      languageAt: (at) => languageAt(runs, at),
+    });
+    // An empty transcript is not an improvement on a wrong one. If every line
+    // was judged invented, the pass declines to be the reason there is nothing
+    // and keeps what the recogniser wrote. A recording with nobody in it at
+    // all is caught before transcription instead, by the voice check -- which
+    // can tell, where a rule reading one line at a time cannot.
+    if (clean.kept.length > 0) {
+      // Then fragments too short to read are joined to their neighbours --
+      // after removal, so a hallucination is never glued onto the real line
+      // beside it.
+      const merged = mergeBriefs(clean.kept);
+      chunks.length = 0;
+      for (const line of merged) {
+        chunks.push({
+          start_ms: Math.round(line.start * 1000),
+          end_ms: Math.round(line.end * 1000),
+          text: line.text,
+        });
+      }
+    }
+  }
 
   if (chunks.length === 0) {
     throw new Error(t("error.noSpeech"));

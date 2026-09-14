@@ -194,6 +194,11 @@ export const es: Catalogue = {
   "run.failedNote":
     "No se subió nada y no se guardó nada. Si la grabación no está en silencio, un modelo más grande en Privacidad suele ayudar.",
   "run.back": "Volver al principio",
+  "run.checkingVoice": "Buscando una voz",
+  "run.noSpeechTitle": "Parece que nadie está hablando",
+  "run.noSpeechBody":
+    "No se encontró ninguna voz en esta grabación, así que no se transcribió nada. El modelo de voz escribe algo para cualquier sonido, de modo que el silencio, la música de espera o el ruido de fondo vuelven llenos de frases que nadie dijo. Si de verdad había gente hablando —el audio muy bajo o apagado puede pasarse por alto—, transcríbelo de todos modos.",
+  "run.transcribeAnyway": "Transcribir de todos modos",
   "run.cancel": "Cancelar",
 
   // ─── the note ───────────────────────────────────────────────────────────

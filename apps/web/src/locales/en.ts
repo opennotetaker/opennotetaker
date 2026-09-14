@@ -187,6 +187,11 @@ export const en = {
   "run.failedNote":
     "Nothing was uploaded and nothing was saved. If the recording is not silent, a larger model under Privacy often helps.",
   "run.back": "Back to the start",
+  "run.checkingVoice": "Listening for a voice",
+  "run.noSpeechTitle": "Nobody seems to be speaking",
+  "run.noSpeechBody":
+    "No voice was found in this recording, so nothing was transcribed. The speech model writes something for any sound, so silence, hold music or background noise comes back full of sentences nobody said. If people really were speaking — very quiet or muffled audio can be missed — transcribe it anyway.",
+  "run.transcribeAnyway": "Transcribe it anyway",
   "run.cancel": "Cancel",
 
   // ─── the note ───────────────────────────────────────────────────────────

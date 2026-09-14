@@ -189,6 +189,11 @@ export const zhHant: Catalogue = {
   "run.failedNote":
     "沒有上傳任何內容，也沒有儲存任何內容。如果錄音不是靜音，在「隱私」裡換一個較大的模型通常會有幫助。",
   "run.back": "回到開始畫面",
+  "run.checkingVoice": "正在偵測人聲",
+  "run.noSpeechTitle": "似乎沒有人在說話",
+  "run.noSpeechBody":
+    "這段錄音裡沒有偵測到人聲，因此沒有進行轉錄。語音模型對任何聲音都會寫出一些內容，所以靜音、等候音樂或背景噪音會被轉錄成一整段沒人說過的話。如果確實有人在說話——音量很小或聲音悶住時可能會漏掉——仍然可以轉錄。",
+  "run.transcribeAnyway": "仍然轉錄",
   "run.cancel": "取消",
 
   "note.missingTitle": "找不到這段錄音",

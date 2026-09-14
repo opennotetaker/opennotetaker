@@ -196,6 +196,11 @@ export const de: Catalogue = {
   "run.failedNote":
     "Es wurde nichts hochgeladen und nichts gespeichert. Wenn die Aufnahme nicht stumm ist, hilft oft ein größeres Modell unter Datenschutz.",
   "run.back": "Zurück zum Anfang",
+  "run.checkingVoice": "Suche nach einer Stimme",
+  "run.noSpeechTitle": "Es scheint niemand zu sprechen",
+  "run.noSpeechBody":
+    "In dieser Aufnahme wurde keine Stimme gefunden, deshalb wurde nichts transkribiert. Das Spracherkennungsmodell schreibt zu jedem Geräusch etwas, sodass Stille, Warteschleifenmusik oder Hintergrundgeräusche als ganze Sätze zurückkommen, die niemand gesagt hat. Falls wirklich jemand gesprochen hat – sehr leise oder dumpfe Aufnahmen können übersehen werden –, können Sie trotzdem transkribieren.",
+  "run.transcribeAnyway": "Trotzdem transkribieren",
   "run.cancel": "Abbrechen",
 
   // ─── the note ───────────────────────────────────────────────────────────
