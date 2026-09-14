@@ -58,7 +58,12 @@ export async function renderHome(app: App): Promise<Node> {
     "main",
     el(
       "section.hero",
-      el("h1", t("home.title")),
+      // `h2`, not `h1`. This view renders on the same document as the
+      // marketing page and on the first route both are visible, so an `h1`
+      // here gave the page two of them and no outline at all. The hero above
+      // titles the document; this titles the app inside it. The class keeps
+      // the type it had.
+      el("h2.h1", t("home.title")),
       el("p.lede", t("home.lede")),
       start,
       el(

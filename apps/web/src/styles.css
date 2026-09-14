@@ -43,7 +43,14 @@
 
   --edge: 1px solid var(--border-hairline);
   --pad: var(--space-4);
-  --shell: 68rem;
+  /* One column for the whole product, and it is the suite's: the header, the
+     app's own views and the marketing sections all cap here and take the same
+     gutter, so the wordmark sits directly above the first word of whatever is
+     under it. `--gutter-page-lg` is already a token; it is what opencapture's
+     header uses. */
+  --container-max: 1200px;
+  --header-height: 64px;
+  --shell: var(--container-max);
   --reading: 40rem;
   /* Speaker colours. Chosen from the token accents rather than invented, and
      ordered so the first two -- the overwhelmingly common case, a two-person
@@ -169,13 +176,30 @@ p {
   position: sticky;
   top: 0;
   z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) var(--gutter-page);
   background: color-mix(in srgb, var(--bg-page) 88%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: var(--edge);
+}
+
+/* The bar spans the window; only its contents are capped. Putting the cap on
+   the bar itself leaves the hairline and the blur stopping short of both
+   edges, which reads as a floating panel rather than a header. */
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding-inline: var(--gutter-page-lg);
+}
+@media (max-width: 900px) {
+  .container { padding-inline: var(--gutter-page); }
+}
+
+/* A fixed height rather than padding, so the row does not grow with whatever
+   is tallest inside it. */
+.topbar .container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: var(--header-height);
 }
 
 .brand {
@@ -190,29 +214,70 @@ p {
 .brand svg {
   display: block;
 }
+.brand .brand-word {
+  display: inline-flex;
+}
+/* Brass is the product's accent and this is the one place it appears as type.
+   It identifies the mark; it is not an affordance. */
+.brand .dot {
+  color: var(--accent);
+}
 
+/* Three zones: brand, tabs, actions. The tabs carried `margin-inline-start:
+   auto` and swept the language control along with them, so the bar had a
+   wordmark at one end and everything else pressed against the other. */
 nav.tabs {
   display: flex;
   gap: var(--space-1);
-  margin-inline-start: auto;
-  flex-wrap: wrap;
+  flex: 1;
+  align-items: center;
 }
 
-nav.tabs a {
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+nav.tabs a,
+.header-actions > a {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   color: var(--text-muted);
   text-decoration: none;
-  font-size: var(--text-sm);
+  font: var(--type-ui);
   white-space: nowrap;
 }
-nav.tabs a:hover {
+nav.tabs a:hover,
+.header-actions > a:hover {
   background: var(--surface-hover);
   color: var(--text-body);
 }
-nav.tabs a[aria-current="page"] {
+nav.tabs a[aria-current="page"],
+.header-actions > a[aria-current="page"] {
   background: var(--surface-selected);
   color: var(--text-strong);
+}
+
+/* Below 760px the tabs take a second row rather than wrapping into the brand
+   or disappearing. */
+@media (max-width: 760px) {
+  .topbar .container {
+    flex-wrap: wrap;
+    height: auto;
+    padding-block: var(--space-2);
+    gap: 0 var(--space-4);
+  }
+  nav.tabs {
+    order: 3;
+    flex-basis: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(var(--gutter-page) * -1);
+    padding-inline: var(--gutter-page);
+  }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  .header-actions { margin-inline-start: auto; }
 }
 
 /* The language control, matching openpdfedit's and opencapture's.
@@ -309,7 +374,10 @@ main {
   width: 100%;
   max-width: var(--shell);
   margin: 0 auto;
-  padding: var(--space-8) var(--gutter-page) var(--space-16);
+  padding: var(--space-8) var(--gutter-page-lg) var(--space-16);
+}
+@media (max-width: 900px) {
+  main { padding-inline: var(--gutter-page); }
 }
 
 footer.site {
@@ -364,15 +432,27 @@ textarea:focus-visible,
   outline-offset: 2px;
 }
 
+/* `a.button.primary` as well as `button.primary`: the bar's call to action is
+   a link, not a button, because it navigates. Styling only the element left it
+   looking like the quiet text links beside it. */
+a.button.primary,
 button.primary {
   background: var(--brand);
   border-color: var(--brand);
   color: var(--brand-contrast);
   font-weight: var(--weight-medium);
 }
+a.button.primary:hover,
 button.primary:hover:not(:disabled) {
   background: var(--brand-strong);
   border-color: var(--brand-strong);
+}
+
+/* Header scale. A page-sized control in a 64px bar is what makes a header look
+   like a toolbar. */
+.button--bar {
+  height: var(--control-h-sm, 34px);
+  padding: 0 var(--space-4);
 }
 button.big {
   height: var(--control-h-lg);
@@ -822,7 +902,11 @@ details.reveal pre {
 .hero {
   padding: var(--space-10) 0 var(--space-8);
 }
-.hero h1 {
+/* `h2.h1` as well as `h1`: on the first route this view shares the document
+   with the marketing hero, so its title is an `h2` and keeps the display type
+   through the class. Level is an outline question, not a type question. */
+.hero h1,
+.hero h2.h1 {
   font: var(--type-display);
   max-width: 18ch;
   margin-bottom: var(--space-4);

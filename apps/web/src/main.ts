@@ -254,26 +254,112 @@ function recordingBar(app: App): Node {
   );
 }
 
+/**
+ * The bar at the top of the document — one of two, never both.
+ *
+ * This is one document serving a product page and an app, so it has two
+ * audiences and they want different navigation. It used to have one bar, the
+ * app's, which meant somebody arriving at the landing page was offered
+ * "Library" and "Ask" before they had recorded anything, and was never offered
+ * the page's own sections at all.
+ *
+ * The landing route (`#/`, and any plain `#section` anchor, which `routeName`
+ * reads as the landing route) gets the marketing bar. Every app route gets the
+ * app's tabs. `data-route` on <body> already hides the marketing copy on those
+ * routes, so exactly one of the two is ever on screen.
+ */
 function topbar(app: App, route: string): Node {
+  return route === "" ? siteBar(app) : appBar(app, route);
+}
+
+/** The wordmark, which is the same in both bars and links to the landing route. */
+function wordmark(): Node {
+  return el(
+    "a.brand",
+    { href: "#/" },
+    logo(),
+    // The wordmark ends on a full stop in the product's accent — every other
+    // product in the suite does, and this one was the odd one out. `app.name`
+    // is the translated product name and is left alone; the stop is
+    // punctuation of the mark, not of the name.
+    el("span.brand-word", el("span", t("app.name")), el("span.dot", ".")),
+  );
+}
+
+/**
+ * The marketing bar: the page's own sections, then one solid call to action.
+ *
+ * The tabs are plain `#section` anchors rather than routes. `routeName` only
+ * treats `#/…` as a route, so clicking one scrolls the page and leaves the
+ * landing route — and this bar — in place.
+ *
+ * They are not translated, and deliberately: the copy they point at is English
+ * static markup in `index.html`. A Chinese tab scrolling to an English heading
+ * is worse than an English tab doing it. The language control is still here,
+ * because it sets the language of the app below.
+ */
+function siteBar(app: App): Node {
+  const anchor = (href: string, label: string) => el("a", { href }, label);
+
+  return el(
+    "header.topbar",
+    el(
+      "div.container",
+      wordmark(),
+      el(
+        "nav.tabs",
+        anchor("#features", "Features"),
+        anchor("#how", "How it works"),
+        anchor("#privacy", "Privacy"),
+        anchor("#pricing", "Pricing"),
+        anchor("#faq", "FAQ"),
+      ),
+      el(
+        "div.header-actions",
+        languagePicker(app),
+        el(
+          "a",
+          { href: "https://github.com/opennotetaker/OpenNoteTaker" },
+          "GitHub",
+        ),
+        // The same words as the hero's primary button. Two different labels
+        // for the one action is the commonest way a page reads as two pages.
+        el("a.button.primary.button--bar", { href: "#/record" }, t("home.record")),
+      ),
+    ),
+  );
+}
+
+/**
+ * The app's bar: where you are, and the other screens you can be on.
+ *
+ * Three zones — brand, tabs, actions — inside a container that caps the row at
+ * the same 1200px every other site in the suite uses. The tabs and the
+ * language control were one group pinned to the right with
+ * `margin-inline-start: auto`, which left the bar with a wordmark at one end
+ * and everything else jammed at the other.
+ */
+function appBar(app: App, route: string): Node {
   const link = (href: string, name: string, label: string) =>
     el("a", { href, ...(route === name ? { "aria-current": "page" } : {}) }, label);
 
   return el(
     "header.topbar",
     el(
-      "a.brand",
-      { href: "#/" },
-      logo(),
-      el("span", t("app.name")),
-    ),
-    el(
-      "nav.tabs",
-      link("#/", "", t("nav.start")),
-      link("#/library", "library", t("nav.library")),
-      link("#/ask", "ask", t("nav.ask")),
-      link("#/privacy", "privacy", t("nav.privacy")),
-      link("#/account", "account", t("nav.account")),
-      languagePicker(app),
+      "div.container",
+      wordmark(),
+      el(
+        "nav.tabs",
+        link("#/record", "record", t("home.record")),
+        link("#/library", "library", t("nav.library")),
+        link("#/ask", "ask", t("nav.ask")),
+        link("#/privacy", "privacy", t("nav.privacy")),
+      ),
+      el(
+        "div.header-actions",
+        languagePicker(app),
+        link("#/account", "account", t("nav.account")),
+      ),
     ),
   );
 }
