@@ -142,14 +142,12 @@ export const pt: Catalogue = {
     "Cancelamento de eco, supressão de ruído e ganho automático. Certo para um microfone numa sala; desligue para um dispositivo de loopback ou uma mesa de som, onde não há o que cancelar e o resultado piora de forma audível.",
   "record.source.handedTab": "A aba do {platform}",
   "record.source.handedTabHint":
-    "Entregue pelo detector, então não há aba para escolher nem caixa para marcar.",
+    "Ao iniciar, o Chrome pergunta qual aba compartilhar: escolha esta e deixe “compartilhar áudio da aba” ligado.",
   "record.detectorOn":
     "O detector de reuniões está instalado, então esta tela abre sozinha quando você entra numa chamada.",
   "record.handoffHeading": "Aberto a partir da sua chamada do {platform}",
-  "record.handoffDirect":
-    "O som daquela aba já está escolhido. Nada é capturado até você apertar iniciar, e nada sai deste navegador depois disso.",
   "record.handoffPicker":
-    "O Chrome não deixa um botão dentro de uma página captar o som de outra aba, então vão perguntar qual aba compartilhar. Escolha a aba da reunião e marque “compartilhar áudio da aba” — senão, só o seu microfone será gravado.",
+    "Ao clicar em iniciar, o Chrome pergunta qual aba compartilhar: escolha a aba do {platform} e clique em Compartilhar. “Compartilhar áudio da aba” já vem ligado; deixe assim, senão só o seu microfone será gravado.",
   "record.agreeHeading": "Com o que você está concordando",
   "record.agreeNote":
     "Guardado palavra por palavra com esta gravação, para que mudar este texto depois não possa reescrever com o que você concordou agora.",
@@ -453,7 +451,7 @@ export const pt: Catalogue = {
   "common.listJoin": " e ",
   "privacy.secondLanguageHint":
     "Os dois idiomas são escutados, e cada trecho é transcrito naquele que está sendo falado de fato. Nomeá-los impede que a detecção escorregue para um terceiro.",
-  "run.listeningForLanguage": "Escutando para saber o idioma",
+  "run.listeningForLanguageAt": "Escutando para saber o idioma: {done} de {total}",
   "run.rereading": "Relendo {seconds}s — o reconhecedor pulou esse trecho",
   "run.transcribingAt": "Transcrevendo {done} de {total}",
   "privacy.languageHint":
@@ -519,8 +517,6 @@ export const pt: Catalogue = {
   "error.tabAudioUnticked":
     "Nenhum áudio de aba foi compartilhado — a caixa “compartilhar áudio da aba” não estava marcada. Gravando só o microfone.",
   "error.tabAudioDeclined": "O áudio da aba não foi compartilhado. Gravando só o microfone.",
-  "error.handoffExpired":
-    "O atalho vindo da aba da reunião expirou. Escolha a aba da reunião na janela de compartilhamento e marque “compartilhar áudio da aba”.",
   "error.inputGone":
     "Essa entrada não está mais disponível. Escolha outra, ou grave a padrão do sistema.",
   "error.recorderStopped": "A gravação parou de forma inesperada.",

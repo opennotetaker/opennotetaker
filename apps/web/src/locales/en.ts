@@ -135,14 +135,12 @@ export const en = {
     "Echo cancellation, noise suppression and automatic gain. Right for a microphone in a room; turn it off for a loopback device or a mixer, where it has nothing to cancel and audibly damages what it is given.",
   "record.source.handedTab": "The {platform} tab",
   "record.source.handedTabHint":
-    "Handed over by the detector, so there is no tab to pick and no box to tick.",
+    "Chrome asks which tab to share when you press start: pick this one, and leave “Share tab audio” on.",
   "record.detectorOn":
     "The meeting detector is installed, so this screen opens by itself when you join a call.",
   "record.handoffHeading": "Opened from your {platform} call",
-  "record.handoffDirect":
-    "That tab's sound is already chosen. Nothing is captured until you press start, and nothing leaves this browser after you do.",
   "record.handoffPicker":
-    "Chrome does not let a button inside a web page pick up another tab's sound, so you will be asked which tab to share. Choose the meeting tab and tick “Share tab audio” — without it, only your microphone is recorded.",
+    "When you press start, Chrome asks which tab to share — pick the {platform} tab and press Share. “Share tab audio” is on by default; leave it on, or only your microphone is recorded.",
   "record.agreeHeading": "What you are agreeing to",
   "record.agreeNote":
     "Stored word for word with this recording, so changing this text later cannot rewrite what you agreed to now.",
@@ -446,7 +444,7 @@ export const en = {
   "common.listJoin": " and ",
   "privacy.secondLanguageHint":
     "Both languages are listened for, and each stretch is transcribed in the one actually being spoken. Naming them stops detection wandering into a third.",
-  "run.listeningForLanguage": "Listening for the language",
+  "run.listeningForLanguageAt": "Listening for the language {done} of {total}",
   "run.rereading": "Reading {seconds}s again — the recogniser skipped it",
   "run.transcribingAt": "Transcribing {done} of {total}",
   "privacy.languageHint":
@@ -512,8 +510,6 @@ export const en = {
   "error.tabAudioUnticked":
     "No tab audio was shared — the “share tab audio” box was not ticked. Recording the microphone only.",
   "error.tabAudioDeclined": "Tab audio was not shared. Recording the microphone only.",
-  "error.handoffExpired":
-    "The shortcut from the meeting tab expired. Pick the meeting tab in the sharing dialog, and tick “share tab audio”.",
   "error.inputGone":
     "That input is no longer available. Choose another, or record the system default.",
   "error.recorderStopped": "The recording stopped unexpectedly.",

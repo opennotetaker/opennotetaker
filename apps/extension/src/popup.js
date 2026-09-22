@@ -1,10 +1,7 @@
 // The toolbar list of meetings that are open right now.
 //
-// This exists for one reason beyond convenience. `chrome.tabCapture` will only
-// issue a stream id when the extension has been "actively invoked", and
-// clicking the toolbar icon is the invocation Chrome trusts most. A press here
-// therefore always gets the direct handover, where a press on the in-page
-// banner sometimes falls back to the tab picker.
+// A second way in, beside the prompt drawn in the meeting: the same handover,
+// for a meeting whose prompt was dismissed or never shown.
 //
 // The URL field at the bottom is for people running their own copy: the
 // extension has to know where the app is before it can hand anything to it.

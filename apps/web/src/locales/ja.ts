@@ -144,14 +144,12 @@ export const ja: Catalogue = {
     "エコー除去、ノイズ抑制、自動ゲイン。部屋のマイクには適していますが、ループバック機器やミキサーでは打ち消すものがなく、渡された音を目に見えて損なうので切ってください。",
   "record.source.handedTab": "{platform} のタブ",
   "record.source.handedTabHint":
-    "検出機能から引き渡されたので、タブを選ぶ必要も、チェックを入れる必要もありません。",
+    "開始を押すと Chrome がタブを尋ねます。この会議のタブを選び、「タブの音声を共有」はオンのままにしてください。",
   "record.detectorOn":
     "会議検出の拡張機能が入っているので、通話に参加するとこの画面が自動的に開きます。",
   "record.handoffHeading": "{platform} の通話から開きました",
-  "record.handoffDirect":
-    "そのタブの音声はすでに選ばれています。開始を押すまで何も収録されず、押したあともこのブラウザーから何も出ません。",
   "record.handoffPicker":
-    "Chrome はページ内のボタンから別のタブの音声を取得することを許可していないため、どのタブを共有するか尋ねられます。会議のタブを選び、「タブの音声を共有」にチェックを入れてください。チェックしないとマイクの音声しか録音されません。",
+    "開始を押すと、Chrome が共有するタブを尋ねます。{platform} のタブを選んで「共有」を押してください。「タブの音声を共有」は最初からオンです。オフにするとマイクの音声しか録音されません。",
   "record.agreeHeading": "同意する内容",
   "record.agreeNote":
     "この録音と一緒に一字一句そのまま保存されるので、あとからこの文言を変えても、いま同意した内容は書き換わりません。",
@@ -455,7 +453,7 @@ export const ja: Catalogue = {
   "common.listJoin": "と",
   "privacy.secondLanguageHint":
     "両方の言語を聞き分け、それぞれの区間を実際に話されている方の言語で文字起こしします。指定しておくと、検出が三つめの言語へ迷い込むのを防げます。",
-  "run.listeningForLanguage": "言語を聞き分けています",
+  "run.listeningForLanguageAt": "言語を聞き分けています {done} / {total}",
   "run.rereading": "{seconds} 秒を読み直しています — 認識器が飛ばした部分です",
   "run.transcribingAt": "文字起こし中 {done} / {total}",
   "privacy.languageHint":
@@ -521,8 +519,6 @@ export const ja: Catalogue = {
   "error.tabAudioUnticked":
     "タブの音声が共有されませんでした — 「タブの音声を共有」にチェックが入っていません。マイクのみを録音します。",
   "error.tabAudioDeclined": "タブの音声は共有されませんでした。マイクのみを録音します。",
-  "error.handoffExpired":
-    "会議タブへのショートカットが期限切れになりました。共有ダイアログで会議タブを選び、「タブの音声を共有」にチェックを入れてください。",
   "error.inputGone":
     "その入力は使えなくなりました。別のものを選ぶか、システムの既定を録音してください。",
   "error.recorderStopped": "録音が予期せず停止しました。",

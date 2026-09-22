@@ -142,14 +142,12 @@ export const ko: Catalogue = {
     "에코 제거, 잡음 억제, 자동 이득. 공간의 마이크에는 알맞지만, 루프백 장치나 믹서에서는 제거할 것이 없어 받은 소리를 눈에 띄게 망가뜨리므로 꺼 두세요.",
   "record.source.handedTab": "{platform} 탭",
   "record.source.handedTabHint":
-    "감지 기능이 넘겨주었으므로 고를 탭도, 체크할 상자도 없습니다.",
+    "시작을 누르면 Chrome이 탭을 묻습니다. 이 회의 탭을 선택하고 “탭 오디오 공유”는 켜 두세요.",
   "record.detectorOn":
     "회의 감지 확장이 설치되어 있어, 통화에 들어가면 이 화면이 저절로 열립니다.",
   "record.handoffHeading": "{platform} 통화에서 열림",
-  "record.handoffDirect":
-    "그 탭의 소리는 이미 선택되어 있습니다. 시작을 누르기 전에는 아무것도 수록되지 않고, 누른 뒤에도 이 브라우저를 나가는 것은 없습니다.",
   "record.handoffPicker":
-    "Chrome은 웹 페이지 안의 버튼이 다른 탭의 소리를 가져오는 것을 허용하지 않으므로, 어느 탭을 공유할지 묻게 됩니다. 회의 탭을 선택하고 “탭 오디오 공유”를 체크하세요. 체크하지 않으면 마이크만 녹음됩니다.",
+    "시작을 누르면 Chrome이 공유할 탭을 묻습니다. {platform} 탭을 선택하고 “공유”를 누르세요. “탭 오디오 공유”는 기본으로 켜져 있으니 그대로 두세요. 끄면 마이크만 녹음됩니다.",
   "record.agreeHeading": "동의하시는 내용",
   "record.agreeNote":
     "이 녹음과 함께 한 글자도 바꾸지 않고 저장되므로, 나중에 이 문구를 바꾸더라도 지금 동의한 내용은 달라지지 않습니다.",
@@ -453,7 +451,7 @@ export const ko: Catalogue = {
   "common.listJoin": "와(과) ",
   "privacy.secondLanguageHint":
     "두 언어를 모두 듣고, 각 구간을 실제로 말해진 언어로 받아씁니다. 지정해 두면 감지가 세 번째 언어로 흘러가는 것을 막습니다.",
-  "run.listeningForLanguage": "언어를 가려내는 중",
+  "run.listeningForLanguageAt": "언어를 가려내는 중 {done} / {total}",
   "run.rereading": "{seconds}초를 다시 읽는 중 — 인식기가 건너뛴 부분입니다",
   "run.transcribingAt": "받아쓰는 중 {done} / {total}",
   "privacy.languageHint":
@@ -519,8 +517,6 @@ export const ko: Catalogue = {
   "error.tabAudioUnticked":
     "탭 오디오가 공유되지 않았습니다 — “탭 오디오 공유”가 체크되지 않았습니다. 마이크만 녹음합니다.",
   "error.tabAudioDeclined": "탭 오디오가 공유되지 않았습니다. 마이크만 녹음합니다.",
-  "error.handoffExpired":
-    "회의 탭으로 가는 지름길이 만료되었습니다. 공유 대화상자에서 회의 탭을 고르고 “탭 오디오 공유”를 체크하세요.",
   "error.inputGone":
     "그 입력은 더 이상 쓸 수 없습니다. 다른 것을 고르거나 시스템 기본값을 녹음하세요.",
   "error.recorderStopped": "녹음이 예기치 않게 멈췄습니다.",

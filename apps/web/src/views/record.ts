@@ -159,7 +159,6 @@ function gate(app: App): Node {
     void begin(app, draft, {
       microphone,
       tab,
-      tabStreamId: handoff?.streamId ?? null,
       microphoneId,
       processMicrophone,
     });
@@ -411,7 +410,7 @@ function fromMeeting(handoff: Handoff): Node {
     el(
       "p.small.muted",
       { style: "margin:.5rem 0 0" },
-      handoff.streamId ? t("record.handoffDirect") : t("record.handoffPicker"),
+      t("record.handoffPicker", { platform: handoff.platform }),
     ),
   );
 }

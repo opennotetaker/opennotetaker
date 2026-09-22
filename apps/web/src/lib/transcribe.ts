@@ -430,6 +430,64 @@ async function detectWindow(
 }
 
 
+/// Read the language of every cell that can change the answer, and only those.
+///
+/// `smoothLabels` throws away a cell that disagrees with both its neighbours.
+/// So where the cells either side of one agree, that cell cannot change the
+/// result: it agrees, or it is smoothed back. Every other cell is read first,
+/// and the one between two of them only where they disagree. A recording in
+/// one language pays for half the encoder passes; each change of language
+/// costs one more. On the reporter's Intel laptop detection was 461 s of a
+/// 708 s run on an 11-minute file (APP-125).
+///
+/// The same runs as reading every cell, except where the language flips every
+/// cell (4 s) -- noise either way, and smoothed differently. Walked in time
+/// order, so progress can say how far in it is.
+///
+/// A quiet cell (`loud` false) is not read at all and keeps `fallback`, which
+/// `silenceInherits` then replaces with its nearer loud neighbour's label.
+export async function readCells(
+  count: number,
+  loud: (cell: number) => boolean,
+  read: (cell: number) => Promise<string>,
+  fallback: string,
+  onReached?: (cells: number) => void | Promise<void>,
+): Promise<{ labels: string[]; read: number; heard: Map<number, string> }> {
+  const labels: string[] = new Array(count).fill(fallback);
+  // What the model actually said for each cell it read, as opposed to what was
+  // inferred from the neighbours. Placing a change re-reads windows that are
+  // exactly these cells, and the answer does not change the second time.
+  const heard = new Map<number, string>();
+  const known: boolean[] = new Array(count).fill(false);
+  let passes = 0;
+  const take = async (i: number) => {
+    if (!loud(i)) return;
+    labels[i] = await read(i);
+    heard.set(i, labels[i]!);
+    known[i] = true;
+    passes += 1;
+  };
+  const between = async (i: number) => {
+    if (!loud(i)) return;
+    if (i + 1 < count && known[i - 1] && known[i + 1] && labels[i - 1] === labels[i + 1]) {
+      labels[i] = labels[i - 1]!;
+      known[i] = true;
+      return;
+    }
+    await take(i);
+  };
+  for (let i = 0; i < count; i += 2) {
+    await take(i);
+    if (i > 0) await between(i - 1);
+    await onReached?.(Math.min(count, i + 1));
+  }
+  if (count > 1 && count % 2 === 0) {
+    await between(count - 1);
+    await onReached?.(count);
+  }
+  return { labels, read: passes, heard };
+}
+
 /// A single cell disagreeing with both its neighbours is noise -- a bar of
 /// music, a held silence, one ambiguous sentence.
 ///
@@ -828,26 +886,30 @@ async function languageRuns(
   const energies = cellEnergies(audio, cell);
   const floor = Math.max(...energies, 0) * QUIET_CELL_RATIO;
   const anyLoud = energies.some((energy) => energy >= floor && energy > 0);
-  const labels: string[] = [];
-  for (let i = 0; i < cells; i += 1) {
-    if (signal?.aborted) throw new DOMException("aborted", "AbortError");
-    if (anyLoud && (energies[i] ?? 0) < floor) {
-      labels.push(allowed[0] ?? "en");
-      continue;
-    }
-    // `slice`, not `subarray`: a copy with its own buffer, because what reaches
-    // an ONNX session should not depend on a view's byteOffset. A view here
-    // meant every window read the opening seconds again, however far in it was
-    // taken -- and so every window came back as the same language.
-    const window = audio.slice(i * cell, Math.min((i + 1) * cell, audio.length));
-    labels.push((await detectWindow(pipe, window, idToLang, suppress)) ?? allowed[0] ?? "en");
-    onProgress?.({
-      stage: "language",
-      fraction: (i + 1) / cells,
-      note: t("run.listeningForLanguage"),
-    });
-    await letThePagePaint();
-  }
+  const { labels, heard: cellsHeard } = await readCells(
+    cells,
+    (i) => !(anyLoud && (energies[i] ?? 0) < floor),
+    async (i) => {
+      if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+      // `slice`, not `subarray`: a copy with its own buffer, because what
+      // reaches an ONNX session should not depend on a view's byteOffset. A
+      // view here meant every window read the opening seconds again, however
+      // far in it was taken -- and so every window came back as the same
+      // language.
+      const window = audio.slice(i * cell, Math.min((i + 1) * cell, audio.length));
+      return (await detectWindow(pipe, window, idToLang, suppress)) ?? allowed[0] ?? "en";
+    },
+    allowed[0] ?? "en",
+    async (reached) => {
+      const at = Math.min(reached * cell, audio.length);
+      onProgress?.({
+        stage: "language",
+        fraction: at / audio.length,
+        note: t("run.listeningForLanguageAt", { done: clock(at), total: clock(audio.length) }),
+      });
+      await letThePagePaint();
+    },
+  );
 
   // Three filters, cheapest first, each removing a different way a language
   // nobody spoke gets into the result: a pause voting at random, a single cell
@@ -872,8 +934,12 @@ async function languageRuns(
     let lastBefore: number | null = null;
     let firstAfter: number | null = null;
     for (let at = lo; at <= hi; at += REFINE_STEP_S * TARGET_SAMPLE_RATE) {
-      const window = audio.slice(at, at + refineWindow);
-      const heard = await detectWindow(pipe, window, idToLang, suppress);
+      // Two of the three windows here are grid cells already read -- the one
+      // ending at the change and the one starting there. Only the window
+      // straddling it is new, so a change costs one pass rather than three.
+      const cached = at % cell === 0 ? cellsHeard.get(at / cell) : undefined;
+      const heard =
+        cached ?? (await detectWindow(pipe, audio.slice(at, at + refineWindow), idToLang, suppress));
       if (heard === after) {
         firstAfter = at;
         break;

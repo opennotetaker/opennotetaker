@@ -142,12 +142,12 @@ export const zhHant: Catalogue = {
   "record.inputs.cleanHint":
     "回音消除、降噪與自動增益。房間裡的麥克風適合開啟；如果選的是回送裝置或混音器，請關閉——它沒有回音可消，反而會明顯損傷聲音。",
   "record.source.handedTab": "{platform} 分頁",
-  "record.source.handedTabHint": "由偵測擴充功能直接交接，不需要挑選分頁，也不需要勾選任何選項。",
+  "record.source.handedTabHint":
+    "按下開始後 Chrome 會請你選一次分頁：選這個會議分頁，並保持「分享分頁音訊」開啟。",
   "record.detectorOn": "會議偵測擴充功能已安裝，你加入通話時這個畫面會自動開啟。",
   "record.handoffHeading": "來自你的 {platform} 通話",
-  "record.handoffDirect":
-    "該分頁的聲音已經選好。按下開始之前不會錄製任何內容，按下之後也不會離開這個瀏覽器。",
-  "record.handoffPicker": "Chrome 不允許網頁裡的按鈕取得其他分頁的聲音，因此仍會詢問要分享哪個分頁。請選擇會議所在的分頁並勾選「分享分頁音訊」，否則只會錄到你的麥克風。",
+  "record.handoffPicker":
+    "按下開始後，Chrome 會請你選一次要分享的分頁：選 {platform} 所在的分頁，按「分享」即可。「分享分頁音訊」預設已開啟，請保持開啟，否則只會錄到你的麥克風。",
   "record.agreeHeading": "你所確認的內容",
   "record.agreeNote":
     "這段文字會一字不差地隨錄音保存，所以日後修改這段措辭，也無法改寫你此刻確認過的內容。",
@@ -430,7 +430,7 @@ export const zhHant: Catalogue = {
   "common.listJoin": "和",
   "privacy.secondLanguageHint":
     "兩種語言都會聆聽，每一段都以實際所說的那一種轉寫。指明語言可以避免偵測跑到第三種去。",
-  "run.listeningForLanguage": "正在辨識語言",
+  "run.listeningForLanguageAt": "正在辨識語言 {done} / {total}",
   "run.rereading": "重新辨識這 {seconds} 秒——辨識器漏掉了",
   "run.transcribingAt": "正在轉寫 {done} / {total}",
   "privacy.languageHint": "Whisper 支援 99 種。除非它老是猜錯，否則保持自動偵測即可。",
@@ -490,8 +490,6 @@ export const zhHant: Catalogue = {
   "error.tabAudioUnticked":
     "沒有分享分頁音訊 —— 「分享分頁音訊」沒有勾選。將只錄製麥克風。",
   "error.tabAudioDeclined": "未分享分頁音訊。將只錄製麥克風。",
-  "error.handoffExpired":
-    "來自會議分頁的捷徑已失效。請在分享對話框中選擇會議分頁，並勾選「分享分頁音訊」。",
   "error.inputGone": "該輸入裝置已無法使用。請另選一個，或改用系統預設裝置錄製。",
   "error.recorderStopped": "錄音意外中斷。",
   "error.undecodable": "無法解碼這個檔案的音訊。請試試 MP3、WAV、M4A、WebM 或 MP4。",

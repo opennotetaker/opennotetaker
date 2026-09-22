@@ -144,14 +144,12 @@ export const de: Catalogue = {
     "Echounterdrückung, Rauschunterdrückung und automatische Aussteuerung. Richtig für ein Mikrofon im Raum; für ein Loopback-Gerät oder ein Mischpult ausschalten — dort gibt es nichts zu unterdrücken, und es beschädigt hörbar, was es bekommt.",
   "record.source.handedTab": "Der {platform}-Tab",
   "record.source.handedTabHint":
-    "Von der Erkennung übergeben, deshalb gibt es keinen Tab auszuwählen und kein Kästchen anzukreuzen.",
+    "Beim Start fragt Chrome nach dem Tab: Wählen Sie diesen und lassen Sie „Tab-Audio teilen“ eingeschaltet.",
   "record.detectorOn":
     "Die Besprechungserkennung ist installiert, deshalb öffnet sich dieser Bildschirm von selbst, sobald Sie einem Gespräch beitreten.",
   "record.handoffHeading": "Aus Ihrem {platform}-Gespräch geöffnet",
-  "record.handoffDirect":
-    "Der Ton dieses Tabs ist bereits ausgewählt. Bis Sie auf Start drücken, wird nichts aufgenommen — und danach verlässt nichts diesen Browser.",
   "record.handoffPicker":
-    "Chrome erlaubt einer Schaltfläche in einer Webseite nicht, den Ton eines anderen Tabs aufzunehmen, deshalb werden Sie gefragt, welchen Tab Sie teilen möchten. Wählen Sie den Tab mit der Besprechung und kreuzen Sie „Tab-Audio teilen“ an – sonst wird nur Ihr Mikrofon aufgenommen.",
+    "Wenn Sie auf Start drücken, fragt Chrome, welchen Tab Sie teilen möchten – wählen Sie den {platform}-Tab und klicken Sie auf „Teilen“. „Tab-Audio teilen“ ist bereits eingeschaltet; lassen Sie es an, sonst wird nur Ihr Mikrofon aufgenommen.",
   "record.agreeHeading": "Womit Sie sich einverstanden erklären",
   "record.agreeNote":
     "Wortwörtlich zusammen mit dieser Aufnahme gespeichert — eine spätere Änderung dieses Textes kann also nicht umschreiben, wozu Sie jetzt Ihr Einverständnis geben.",
@@ -455,7 +453,7 @@ export const de: Catalogue = {
   "common.listJoin": " und ",
   "privacy.secondLanguageHint":
     "Auf beide Sprachen wird gehört, und jeder Abschnitt wird in der tatsächlich gesprochenen transkribiert. Sie zu benennen verhindert, dass die Erkennung in eine dritte abdriftet.",
-  "run.listeningForLanguage": "Hört auf die Sprache",
+  "run.listeningForLanguageAt": "Hört auf die Sprache: {done} von {total}",
   "run.rereading": "Liest {seconds}s noch einmal — die Erkennung hat sie übersprungen",
   "run.transcribingAt": "Transkribiert {done} von {total}",
   "privacy.languageHint":
@@ -521,8 +519,6 @@ export const de: Catalogue = {
   "error.tabAudioUnticked":
     "Es wurde kein Tab-Audio geteilt — das Kästchen „Tab-Audio teilen“ war nicht angekreuzt. Es wird nur das Mikrofon aufgenommen.",
   "error.tabAudioDeclined": "Tab-Audio wurde nicht geteilt. Es wird nur das Mikrofon aufgenommen.",
-  "error.handoffExpired":
-    "Die Abkürzung aus dem Besprechungstab ist abgelaufen. Wählen Sie den Besprechungstab im Freigabedialog und kreuzen Sie „Tab-Audio teilen“ an.",
   "error.inputGone":
     "Dieser Eingang steht nicht mehr zur Verfügung. Wählen Sie einen anderen oder nehmen Sie den Systemstandard auf.",
   "error.recorderStopped": "Die Aufnahme wurde unerwartet beendet.",

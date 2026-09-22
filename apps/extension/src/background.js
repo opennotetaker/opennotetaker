@@ -9,21 +9,16 @@
 // sites the user has told us to stop asking about, and where their copy of the
 // app lives.
 //
-// # The handover, and why it has a fallback
+// # The handover
 //
-// Pressing "Record" opens OpenNoteTaker and hands it a `chrome.tabCapture`
-// stream id for the meeting tab. That id lets the *page* -- not the extension
-// -- open the audio directly (`getMediaStreamId` names the app tab as the
-// consumer), which skips the share-a-tab picker and removes the two ways that
-// picker goes wrong: choosing the wrong tab, and missing the "share audio"
-// tick box.
-//
-// tabCapture also requires the extension to have been "actively invoked" for
-// that tab, and a click inside a page we injected does not always count. When
-// it does not, `getMediaStreamId` throws, and the handover degrades to the
-// flow the app has always had: the consent screen, with the tab source ticked
-// and the picker one press away. A failed shortcut must never be a failed
-// recording.
+// Pressing "Record" opens OpenNoteTaker and tells it which meeting it came
+// from. It used to hand over a `chrome.tabCapture` stream id as well, so the
+// app could skip Chrome's share-a-tab picker. That is gone (APP-124): Chrome
+// only mints the id when the extension is "actively invoked" -- a toolbar
+// click, never a button we drew inside the meeting -- and the id expires
+// within seconds, long before anyone has read the consent screen. The picker
+// is the one path, the app says so up front, and this extension no longer
+// asks for the `tabCapture` permission at all.
 
 import { detect, normaliseAppUrl, recordRoute } from "./platforms.js";
 
@@ -200,21 +195,8 @@ async function record(meetingTabId, platform, title) {
   const app = await openApp();
   if (!app) return { ok: false };
 
-  let streamId = null;
-  let reason = null;
-  try {
-    streamId = await chrome.tabCapture.getMediaStreamId({
-      targetTabId: meetingTabId,
-      consumerTabId: app.id,
-    });
-  } catch (error) {
-    reason = error instanceof Error ? error.message : String(error);
-  }
-
   await handOver(app.id, {
     type: HANDOFF,
-    streamId,
-    reason,
     platform: platform || detect(target.url ?? "")?.name || "",
     title: title || target.title || "",
     meetingTabId,
@@ -222,7 +204,7 @@ async function record(meetingTabId, platform, title) {
 
   await chrome.tabs.update(app.id, { active: true });
   await chrome.windows.update(app.windowId, { focused: true }).catch(() => undefined);
-  return { ok: true, direct: streamId !== null };
+  return { ok: true };
 }
 
 /// Deliver the handover, retrying while the app tab is still coming up.

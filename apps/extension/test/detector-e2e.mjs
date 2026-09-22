@@ -12,12 +12,9 @@
 // at the network layer, so the tab's origin really is meet.google.com and
 // every matching rule in the manifest is exercised for real.
 //
-// What this cannot cover is the stream id itself. `chrome.tabCapture` refuses
-// to mint one without an "active invocation" that a driven click does not
-// count as, so the assertion here is the *fallback*: the app is opened, told
-// which meeting it came from, and left showing the consent screen with the
-// picker one press away. That is the path a user hits whenever the shortcut is
-// unavailable, and it is the one that must never be broken.
+// The picker itself is Chrome's own dialog, so it is answered by a flag
+// (`--auto-select-tab-capture-source-by-title`) -- the same choice a user
+// makes by clicking the meeting tab in it.
 
 import { spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -133,17 +130,24 @@ try {
     .isChecked();
   check("the meeting tab is already chosen as the source", ticked);
 
-  // APP-124. A driven click is not an invocation, so this path never has a
-  // stream id -- and the card used to call that a shortcut which had "expired",
-  // for a shortcut that was never made. It has to say what is true, and warn
-  // about the one box whose omission records only the microphone.
-  const explained = await card.textContent();
-  check("the fallback never claims a shortcut expired", !/expired/i.test(explained), explained);
+  // APP-124. The picker is the one path now, from the prompt and the toolbar
+  // alike. Nothing on this screen may promise otherwise -- it used to say the
+  // tab was "already chosen", with "no tab to pick", and then open the picker
+  // anyway -- and both places that describe the tab must say Chrome will ask.
+  const consent = await app.locator("main").textContent();
   check(
-    "the fallback says why, and names the box to tick",
-    /button inside a web page/i.test(explained) && /Share tab audio/.test(explained),
+    "nothing promises there is no tab to pick",
+    !/no tab to pick|already chosen|expired/i.test(consent),
+    consent.match(/[^.]*(no tab to pick|already chosen|expired)[^.]*/i)?.[0],
+  );
+  const explained = await card.textContent();
+  check(
+    "the meeting card says Chrome will ask, and that tab audio is on",
+    /Chrome asks which tab to share/.test(explained) && /Share tab audio/.test(explained),
     explained,
   );
+  const hint = await app.locator("label.check", { hasText: "Google Meet tab" }).textContent();
+  check("the source row says the same", /Chrome asks which tab to share/.test(hint), hint);
 
   // A second meeting must land in the app tab that is already open, not in a
   // third one. Somebody who records two calls in an afternoon should not end
@@ -166,6 +170,15 @@ try {
     context.pages().length === before + 1,
     `${context.pages().length} pages, expected ${before + 1}`,
   );
+
+  // Start it. Chrome's picker opens -- answered by the launch flag with the
+  // Retro tab -- and the recording screen must not greet that normal step
+  // with a warning. It used to say the shortcut had "expired".
+  await app.getByRole("button", { name: "Start recording" }).click();
+  await app.getByText("Name it now, or later").first().waitFor({ timeout: 15_000 }).catch(() => {});
+  const recording = await app.locator("main").textContent();
+  check("recording started", /Name it now, or later/.test(recording), recording.slice(0, 200));
+  check("…with no warning about the picker", !/expired|shortcut/i.test(recording), recording.slice(0, 300));
 
   // "Never ask here" has to actually silence the site, or the prompt becomes
   // the pop-up it replaces.
@@ -213,6 +226,9 @@ async function launch(profile) {
     `--disable-extensions-except=${extension}`,
     `--load-extension=${extension}`,
     "--no-first-run",
+    "--use-fake-ui-for-media-stream",
+    "--use-fake-device-for-media-stream",
+    "--auto-select-tab-capture-source-by-title=Retro",
   ];
   try {
     return await chromium.launchPersistentContext(profile, { channel: "chromium", args });

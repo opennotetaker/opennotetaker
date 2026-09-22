@@ -257,6 +257,44 @@ check("…never runs backwards", seen.every((x, i) => i === 0 || x >= seen[i - 1
 check("…and ends at 100%", seen[seen.length - 1] === 1, JSON.stringify(seen));
 check("positions read as a clock", progressResult.clocks.join(" ") === "0:40 1:22 1:02:05", progressResult.clocks.join(" "));
 
+// APP-125: language detection read every 4 s cell, one encoder pass each, and
+// on an Intel laptop that was 65% of the run. It now reads every other cell and
+// the one between only where its neighbours disagree. The runs must come out
+// the same as reading them all, for meeting-shaped sequences.
+const cellsResult = await page.evaluate(async () => {
+  const { readCells, smoothLabels } = window.__test.transcribe;
+  const expand = (spec) => spec.flatMap(([language, n]) => Array(n).fill(language));
+  const cases = {
+    oneLanguage: expand([["en", 40]]),
+    eightSecondInsert: expand([["en", 9], ["zh", 2], ["en", 9]]),
+    insertOnOddCell: expand([["en", 8], ["zh", 2], ["en", 10]]),
+    oneNoisyCell: expand([["en", 7], ["zh", 1], ["en", 7]]),
+    halfAndHalf: expand([["zh", 13], ["en", 14]]),
+    codeSwitching: expand([["en", 3], ["zh", 2], ["en", 4], ["zh", 3], ["en", 2]]),
+  };
+  const out = {};
+  for (const [name, truth] of Object.entries(cases)) {
+    const { labels, read } = await readCells(truth.length, () => true, async (i) => truth[i], "en");
+    out[name] = {
+      same: smoothLabels(labels).join() === smoothLabels(truth).join(),
+      read,
+      of: truth.length,
+    };
+  }
+  // A quiet cell is never read.
+  const quiet = await readCells(6, (i) => i !== 3, async () => "en", "en");
+  // 0, 2 and 4 are read, 1 is inferred from them, 3 is quiet, 5 has no right
+  // neighbour and is read.
+  out.quietSkipped = quiet.read === 4;
+  return out;
+});
+for (const [name, r] of Object.entries(cellsResult)) {
+  if (name === "quietSkipped") continue;
+  check(`language cells, ${name}: same runs as reading every cell`, r.same, JSON.stringify(r));
+}
+check("…a quiet cell is never read", cellsResult.quietSkipped);
+check("…one language costs half the passes", cellsResult.oneLanguage.read <= 21, JSON.stringify(cellsResult.oneLanguage));
+
 // --- the store, and retention ----------------------------------------------
 
 const storeResult = await page.evaluate(async () => {

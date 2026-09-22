@@ -41,10 +41,8 @@ chrome.runtime.onMessage.addListener((message, _sender, respond) => {
     const handoff = {
       channel: CHANNEL,
       type: "handoff",
-      streamId: message.streamId ?? null,
       platform: message.platform ?? "",
       title: message.title ?? "",
-      reason: message.reason ?? null,
     };
     // One handover in flight at a time: a second click replaces the first
     // rather than queueing behind it, so the app opens on the latest meeting.

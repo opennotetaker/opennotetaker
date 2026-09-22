@@ -15,9 +15,9 @@ smallest one that does the job.
    URL stops changing once you are in a call, it also watches the page for a
    leave-the-call button.
 2. Draws a prompt in the corner of the meeting: **record this meeting?**
-3. If you accept, opens OpenNoteTaker and hands it the meeting tab, so the
-   share-a-tab picker never appears and the "share audio" box cannot be
-   forgotten.
+3. If you accept, opens OpenNoteTaker and tells it which meeting it came
+   from. When you press start, Chrome asks once which tab to share: pick the
+   meeting tab. "Share tab audio" is already on in that dialog.
 4. Leaves you on the consent screen. It never starts a recording by itself.
 
 ## What it does not do
@@ -26,7 +26,7 @@ smallest one that does the job.
   on a meeting host only — whether a leave-call control exists. No page
   content is read, stored or sent.
 - **It does not touch audio.** The recording happens in the app's tab, in the
-  app's own code. The extension hands over a Chrome stream id and stops.
+  app's own code. The extension names the meeting and stops.
 - **It talks to no server.** There is no telemetry and no network code in it
   at all; `grep -r fetch src/` comes back empty.
 - **It cannot see native apps.** The Zoom, Teams and VooV *desktop*
@@ -44,18 +44,19 @@ smallest one that does the job.
    `https://opennotetaker.app/`, or `http://localhost:5182/` if you are
    running it yourself.
 
-The toolbar icon is also the reliable fast path: Chrome only issues a direct
-tab-capture handover when the extension has been "actively invoked", and a
-click on the toolbar always counts where a click inside a page sometimes does
-not. The popup lists every meeting tab you have open; pressing **Record**
-there always skips the picker.
+The toolbar icon lists every meeting tab you have open, with a **Record**
+button on each — the same handover, for a meeting whose prompt you dismissed.
+
+It does not skip Chrome's share picker, and neither does the prompt. An
+earlier build tried, with a `chrome.tabCapture` stream id; Chrome issues one
+only for a toolbar click and expires it within seconds, so by the time the
+consent screen was read it had failed and the picker opened anyway (APP-124).
 
 ## Permissions, and why each one is needed
 
 | Permission | Why |
 |---|---|
 | `tabs` | To read the URL of tabs, which is the whole detector, and to find or open the app's tab |
-| `tabCapture` | To mint the stream id that lets the app open the meeting tab's audio without the picker |
 | `storage` | Two things: which sites you said "never ask" on, and where your copy of the app is |
 | The four meeting hosts | To draw the prompt in the page |
 | The app's own origin | To hand the meeting over to it |

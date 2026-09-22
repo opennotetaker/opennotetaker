@@ -27,26 +27,16 @@
 //   this is the point where a competitor reaches for a desktop app, and it is
 //   a deliberate choice not to.
 //
-// # The picker, and the one way past it
+// # The picker
 //
-// The share picker is the worst moment in the flow: it is browser UI we cannot
-// style, it asks a question ("which tab?") the user has already answered by
-// being in the meeting, and its "share audio" tick box is off by default and
-// easy to miss -- an unticked box is a recording of silence discovered an hour
-// later.
-//
-// The optional detector extension (apps/extension) removes it. It hands the
-// page a `chrome.tabCapture` stream id for the meeting tab, which
-// `getUserMedia` opens directly: the right tab, audio only, no picker, no tick
-// box. Two things follow from that and are handled below.
-//
-// - **Tab capture silences the tab it captures**, unlike `getDisplayMedia`.
-//   The audio has to be played back out of this page or the user stops hearing
-//   their own meeting -- see `monitor` in `attach`.
-// - **A stream id goes stale.** It is minted when the user accepts the prompt,
-//   and spent when they finish the consent screen, which is a minute later. If
-//   it has expired the picker is still there, and the code falls back to it
-//   rather than failing.
+// The share picker is browser UI we cannot style, and it asks a question
+// ("which tab?") the user has already answered by being in the meeting. The
+// detector extension used to hand over a `chrome.tabCapture` stream id so the
+// page could skip it, and that is gone (APP-124): Chrome only mints the id for
+// a toolbar click, never for a button inside the meeting page, and the id it
+// does mint expires within seconds -- long before anyone has read the consent
+// screen. So it failed nearly every time, and then warned about a normal step.
+// The picker is the one path, and the consent screen says so before it opens.
 
 import { t } from "./i18n";
 
@@ -55,10 +45,6 @@ export type SourceKind = "microphone" | "tab";
 export interface StartOptions {
   microphone: boolean;
   tab: boolean;
-  /// A `chrome.tabCapture` stream id from the detector extension, naming the
-  /// meeting tab. When present it is tried before the share picker; when it
-  /// fails, the picker takes over.
-  tabStreamId?: string | null;
   /// Which input to record, from `lib/inputs.ts`. Null is the system default.
   microphoneId?: string | null;
   /// Run the conference-call processing chain on the input. True for an actual
@@ -72,10 +58,6 @@ export interface Started {
   /// What was actually captured, which is not always what was asked for -- the
   /// user can decline the tab picker, or tick the wrong box in it.
   captured: SourceKind[];
-  /// The tab was opened straight from the extension's handover, without the
-  /// share picker. False when the picker was used, including after a stale
-  /// handover fell back to it.
-  direct: boolean;
   /// Set when tab audio was requested and the browser or the user did not
   /// provide it. Shown, not swallowed.
   warning: string | null;
@@ -163,7 +145,6 @@ export class Recorder {
     analyser.fftSize = 1024;
     const captured: SourceKind[] = [];
     let warning: string | null = null;
-    let direct = false;
 
     try {
       if (options.microphone) {
@@ -175,24 +156,7 @@ export class Recorder {
         captured.push("microphone");
       }
 
-      if (options.tab && options.tabStreamId) {
-        try {
-          const stream = await captureHandedTab(options.tabStreamId);
-          // Played back as well as recorded: tab capture mutes the meeting for
-          // the person in it, and a recorder that deafens you is not one you
-          // use twice.
-          this.attach(context, destination, analyser, stream, "tab", true);
-          captured.push("tab");
-          direct = true;
-        } catch {
-          // Expired, or a build of Chrome that will not take the id. Not
-          // surfaced as an error: the picker below is the same recording, one
-          // extra press away.
-          warning = t("error.handoffExpired");
-        }
-      }
-
-      if (options.tab && !direct) {
+      if (options.tab) {
         if (!canCaptureTab()) {
           warning = t("error.noTabAudio");
         } else {
@@ -249,7 +213,7 @@ export class Recorder {
       this.pausedFor = 0;
       this.pausedAt = 0;
       this.tick();
-      return { captured, direct, warning };
+      return { captured, warning };
     } catch (error) {
       await context.close().catch(() => undefined);
       this.releaseStreams();
@@ -354,16 +318,11 @@ export class Recorder {
     analyser: AnalyserNode,
     stream: MediaStream,
     kind: SourceKind,
-    /// Play this source out of the speakers as well as recording it. True for
-    /// a handed-over tab, which Chrome mutes at the source; never true for the
-    /// microphone, which would be a feedback loop.
-    monitor = false,
   ): void {
     this.streams.push(stream);
     const source = context.createMediaStreamSource(stream);
     source.connect(destination);
     source.connect(analyser);
-    if (monitor) source.connect(context.destination);
     this.kinds.add(kind);
     if (kind === "microphone") {
       this.micSource = source;
@@ -440,29 +399,6 @@ async function openMicrophone(id: string | null, process: boolean): Promise<Medi
       autoGainControl: process,
     },
   });
-}
-
-/// Open a tab the extension has already chosen.
-///
-/// The legacy `mandatory` constraint form is not a mistake and has no modern
-/// equivalent: `chromeMediaSource: "tab"` is how Chrome accepts an id minted
-/// by `chrome.tabCapture.getMediaStreamId`, and the standard constraints have
-/// nothing that names a tab. TypeScript's `MediaTrackConstraints` does not
-/// describe it either, hence the cast.
-async function captureHandedTab(streamId: string): Promise<MediaStream> {
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: {
-      mandatory: {
-        chromeMediaSource: "tab",
-        chromeMediaSourceId: streamId,
-      },
-    },
-  } as unknown as MediaStreamConstraints);
-  if (stream.getAudioTracks().length === 0) {
-    for (const track of stream.getTracks()) track.stop();
-    throw new Error("no audio track");
-  }
-  return stream;
 }
 
 /// Turn a media error into a sentence with a next step in it.

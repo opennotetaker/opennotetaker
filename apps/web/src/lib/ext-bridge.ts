@@ -26,16 +26,17 @@
 // consent screen as every other recording.
 
 /// A meeting the extension is offering to record.
+///
+/// It names the meeting and nothing more. It used to carry a tabCapture stream
+/// id so the app could skip Chrome's share picker, but Chrome expires that id
+/// within seconds and nobody finishes reading the consent screen that fast:
+/// the shortcut failed nearly every time and then showed a warning for a
+/// normal step (APP-124). The picker is the one path now, and it is said so.
 export interface Handoff {
-  /// A tabCapture stream id, or null when the extension could not get one and
-  /// the share picker has to be used after all.
-  streamId: string | null;
   /// "Google Meet", "Zoom", "Microsoft Teams", "VooV Meeting".
   platform: string;
   /// The meeting tab's title, which is usually the meeting's name.
   title: string;
-  /// Why there is no stream id, for the console rather than the interface.
-  reason: string | null;
 }
 
 const CHANNEL = "opennotetaker-extension";
@@ -59,10 +60,8 @@ export function connect(): void {
       installed = true;
       const handoff = data as unknown as Handoff;
       waiting = {
-        streamId: typeof handoff.streamId === "string" ? handoff.streamId : null,
         platform: String(handoff.platform ?? ""),
         title: String(handoff.title ?? ""),
-        reason: handoff.reason ?? null,
       };
       deliver();
     }

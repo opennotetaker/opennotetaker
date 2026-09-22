@@ -142,14 +142,12 @@ export const es: Catalogue = {
     "Cancelación de eco, supresión de ruido y ganancia automática. Correcto para un micrófono en una sala; desactívalo para un dispositivo de bucle o una mesa de mezclas, donde no tiene nada que cancelar y estropea de forma audible lo que recibe.",
   "record.source.handedTab": "La pestaña de {platform}",
   "record.source.handedTabHint":
-    "Entregada por el detector, así que no hay pestaña que elegir ni casilla que marcar.",
+    "Al iniciar, Chrome te pregunta qué pestaña compartir: elige esta y deja activado «compartir audio de la pestaña».",
   "record.detectorOn":
     "El detector de reuniones está instalado, así que esta pantalla se abre sola cuando entras en una llamada.",
   "record.handoffHeading": "Abierto desde tu llamada de {platform}",
-  "record.handoffDirect":
-    "El sonido de esa pestaña ya está elegido. No se captura nada hasta que pulses empezar, y después nada sale de este navegador.",
   "record.handoffPicker":
-    "Chrome no permite que un botón dentro de una página web capture el sonido de otra pestaña, así que se te preguntará qué pestaña compartir. Elige la pestaña de la reunión y marca «compartir audio de la pestaña»; si no, solo se grabará tu micrófono.",
+    "Al pulsar iniciar, Chrome te pregunta qué pestaña compartir: elige la pestaña de {platform} y pulsa Compartir. «Compartir audio de la pestaña» ya viene activado; déjalo así o solo se grabará tu micrófono.",
   "record.agreeHeading": "Con qué estás de acuerdo",
   "record.agreeNote":
     "Se guarda palabra por palabra con esta grabación, de modo que cambiar este texto más adelante no puede reescribir lo que aceptas ahora.",
@@ -453,7 +451,7 @@ export const es: Catalogue = {
   "common.listJoin": " y ",
   "privacy.secondLanguageHint":
     "Se escuchan ambos idiomas, y cada tramo se transcribe en el que se está hablando de verdad. Nombrarlos evita que la detección se desvíe hacia un tercero.",
-  "run.listeningForLanguage": "Escuchando para saber el idioma",
+  "run.listeningForLanguageAt": "Escuchando para saber el idioma: {done} de {total}",
   "run.rereading": "Releyendo {seconds} s — el reconocedor se los saltó",
   "run.transcribingAt": "Transcribiendo {done} de {total}",
   "privacy.languageHint":
@@ -519,8 +517,6 @@ export const es: Catalogue = {
   "error.tabAudioUnticked":
     "No se compartió audio de la pestaña: la casilla «compartir audio de la pestaña» no estaba marcada. Se grabará solo el micrófono.",
   "error.tabAudioDeclined": "No se compartió el audio de la pestaña. Se grabará solo el micrófono.",
-  "error.handoffExpired":
-    "El atajo desde la pestaña de la reunión ha caducado. Elige la pestaña de la reunión en el diálogo de compartir y marca «compartir audio de la pestaña».",
   "error.inputGone":
     "Esa entrada ya no está disponible. Elige otra, o graba la predeterminada del sistema.",
   "error.recorderStopped": "La grabación se detuvo de forma inesperada.",
