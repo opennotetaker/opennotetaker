@@ -33,29 +33,34 @@ export interface TranscribeModel {
   size: string;
   note: string;
   englishOnly: boolean;
+  /// The weights to use on WebGPU. See `transcribe` for why this is not q8 for
+  /// the models most people run.
+  gpuDtype: "fp32" | "q8";
 }
 
 /// Four, spanning the real trade-off -- download size against accuracy -- and
 /// not one checkpoint more. A dropdown of fifteen is a worse product than four
 /// a user can actually choose between.
 ///
-/// The names and sizes are not translated: "Base" and "~80 MB" are what the
+/// The names and sizes are not translated: "Base" and "~290 MB" are what the
 /// model is called and how big it is in any language, and translating a
 /// checkpoint's name would make it harder to look up, not easier.
 export const MODELS: TranscribeModel[] = [
   {
     id: "onnx-community/whisper-tiny.en",
     label: "Tiny (English)",
-    size: "~40 MB",
+    size: "~150 MB",
     note: "model.tiny",
     englishOnly: true,
+    gpuDtype: "fp32",
   },
   {
     id: "onnx-community/whisper-base",
     label: "Base",
-    size: "~80 MB",
+    size: "~290 MB",
     note: "model.base",
     englishOnly: false,
+    gpuDtype: "fp32",
   },
   {
     id: "onnx-community/whisper-small",
@@ -63,6 +68,7 @@ export const MODELS: TranscribeModel[] = [
     size: "~250 MB",
     note: "model.small",
     englishOnly: false,
+    gpuDtype: "q8",
   },
   {
     id: "onnx-community/whisper-large-v3-turbo",
@@ -70,6 +76,7 @@ export const MODELS: TranscribeModel[] = [
     size: "~800 MB",
     note: "model.turbo",
     englishOnly: false,
+    gpuDtype: "q8",
   },
 ];
 
@@ -109,6 +116,12 @@ export const LANGUAGES: { code: string; iso: string; label: string }[] = [
   { code: "polish", iso: "pl", label: "Polski" },
   { code: "ukrainian", iso: "uk", label: "Українська" },
 ];
+
+/// The weights a model runs with on WebGPU. A model id not in the list -- an
+/// older setting -- gets q8, the smaller download.
+function gpuDtype(model: string): "fp32" | "q8" {
+  return MODELS.find((entry) => entry.id === model)?.gpuDtype ?? "q8";
+}
 
 /// The ISO code Whisper knows a language by, from either of its names.
 export function whisperCode(name: string): string {
@@ -157,7 +170,10 @@ export async function support(): Promise<Support> {
 }
 
 export interface Progress {
-  stage: "listening" | "model" | "transcribing";
+  /// In the order they happen. `fraction` is always within the stage, so the
+  /// caller can give each its own stretch of the bar and it never runs
+  /// backwards when one stage hands over to the next (APP-126).
+  stage: "listening" | "model" | "language" | "transcribing";
   fraction: number | null;
   note: string;
 }
@@ -412,6 +428,7 @@ async function detectWindow(
   if (!ids?.length) return null;
   return idToLang.get(Number(ids[ids.length - 1])) ?? null;
 }
+
 
 /// A single cell disagreeing with both its neighbours is noise -- a bar of
 /// music, a held silence, one ambiguous sentence.
@@ -676,6 +693,83 @@ export function quietestNear(audio: Float32Array, centre: number, radius: number
   return quietest + Math.round(frame / 2);
 }
 
+/// Give the browser a turn, so the progress line just set is actually drawn.
+///
+/// Each model call resolves as a microtask, and a chain of them never returns
+/// to the event loop: the label is updated in the DOM and never painted. That
+/// is why the screen sat on "Downloading the speech model (100%)" for the
+/// whole pass and then jumped to the next step (APP-126) -- the progress was
+/// being reported all along.
+///
+/// A message-channel task rather than `setTimeout`: a transcription is often
+/// left running in a background tab, where timers are throttled to one a
+/// second and, after five minutes, one a minute. Messages are not.
+export function letThePagePaint(): Promise<void> {
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+      channel.port1.close();
+      resolve();
+    };
+    channel.port2.postMessage(null);
+  });
+}
+
+/// Download progress that only ever moves forward.
+///
+/// transformers.js reports each file on its own, and its running total only
+/// counts the files it has *started*: the config finishes at 100%, the encoder
+/// starts and the total drops to 58%, the decoder starts and it drops to 41%
+/// (APP-126). Only the weights are counted here -- the config and tokenizer
+/// are a few kilobytes and would otherwise put the bar at 100% before the real
+/// download has begun -- and the figure shown never falls below one already
+/// shown.
+export class DownloadProgress {
+  private readonly files = new Map<string, { loaded: number; total: number }>();
+  private shown = 0;
+
+  /// The fraction to show, or null when this event is not about the weights.
+  update(file: string, loaded: number, total: number): number | null {
+    if (!/\.onnx(_data)?$/.test(file) || !(total > 0)) return null;
+    this.files.set(file, { loaded, total });
+    let sum = 0;
+    let size = 0;
+    for (const entry of this.files.values()) {
+      sum += entry.loaded;
+      size += entry.total;
+    }
+    this.shown = Math.max(this.shown, Math.min(1, sum / size));
+    return this.shown;
+  }
+}
+
+/// Call `onWindow` with a running count each time the pipeline finishes a
+/// window, until the returned function is called.
+function countWindows(transcriber: unknown, onWindow: (done: number) => void): () => void {
+  const model = (transcriber as WhisperInternals).model;
+  const original = model.generate;
+  let done = 0;
+  model.generate = async function (this: unknown, ...args: [Record<string, unknown>]) {
+    const result = await original.apply(this, args);
+    done += 1;
+    onWindow(done);
+    await letThePagePaint();
+    return result;
+  };
+  return () => {
+    model.generate = original;
+  };
+}
+
+/// "1:22", for a position in the recording.
+export function clock(samples: number): string {
+  const seconds = Math.floor(samples / TARGET_SAMPLE_RATE);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const rest = String(seconds % 60).padStart(2, "0");
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}:${rest}` : `${minutes}:${rest}`;
+}
+
 /// How many windows the pipeline will cut this audio into.
 ///
 /// Mirrors the loop in transformers.js rather than approximating it with a
@@ -725,9 +819,22 @@ async function languageRuns(
 
   const cell = DETECT_WINDOW_S * TARGET_SAMPLE_RATE;
   const cells = Math.max(1, Math.ceil(audio.length / cell));
+  // A quiet cell's vote is thrown away by `silenceInherits` below, which hands
+  // it its nearer loud neighbour's label -- so asking the model about it is an
+  // encoder pass whose answer is discarded. A meeting is full of pauses, and
+  // on the WebAssembly backend each pass costs seconds (APP-125). The one
+  // exception is a recording with no loud cell at all, which keeps its own
+  // labels, so then every cell is read.
+  const energies = cellEnergies(audio, cell);
+  const floor = Math.max(...energies, 0) * QUIET_CELL_RATIO;
+  const anyLoud = energies.some((energy) => energy >= floor && energy > 0);
   const labels: string[] = [];
   for (let i = 0; i < cells; i += 1) {
     if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    if (anyLoud && (energies[i] ?? 0) < floor) {
+      labels.push(allowed[0] ?? "en");
+      continue;
+    }
     // `slice`, not `subarray`: a copy with its own buffer, because what reaches
     // an ONNX session should not depend on a view's byteOffset. A view here
     // meant every window read the opening seconds again, however far in it was
@@ -735,16 +842,17 @@ async function languageRuns(
     const window = audio.slice(i * cell, Math.min((i + 1) * cell, audio.length));
     labels.push((await detectWindow(pipe, window, idToLang, suppress)) ?? allowed[0] ?? "en");
     onProgress?.({
-      stage: "transcribing",
+      stage: "language",
       fraction: (i + 1) / cells,
       note: t("run.listeningForLanguage"),
     });
+    await letThePagePaint();
   }
 
   // Three filters, cheapest first, each removing a different way a language
   // nobody spoke gets into the result: a pause voting at random, a single cell
   // disagreeing with both neighbours, and a flicker too short to be real.
-  const heard = silenceInherits(labels, cellEnergies(audio, cell));
+  const heard = silenceInherits(labels, energies);
   const runs = absorbStrayLanguages(
     runsFromLabels(smoothLabels(heard), cell, audio.length),
     audio.length,
@@ -1053,23 +1161,34 @@ export async function transcribe(options: Options): Promise<Transcribed> {
     pipelinePromise = null;
     loadedModel = model;
   }
+  const download = new DownloadProgress();
   pipelinePromise ??= pipeline("automatic-speech-recognition", model, {
     device: device.device,
-    // Quantised weights on WebGPU, full precision on the WebAssembly backend.
-    // This is a hard constraint, not a tuning preference: `q8` fails outright
-    // on ONNX Runtime's wasm backend for these Whisper exports -- session
-    // creation dies on a missing scale -- while WebGPU loads them happily.
-    // Choosing q8 everywhere works on the developer's machine and breaks for
-    // everyone without WebGPU.
-    dtype: device.device === "webgpu" ? "q8" : "fp32",
-    progress_callback: (event: { status?: string; progress?: number }) => {
-      if (event.status === "progress" && typeof event.progress === "number") {
-        options.onProgress?.({
-          stage: "model",
-          fraction: event.progress / 100,
-          note: t("run.downloadingModel", { percent: Math.round(event.progress) }),
-        });
-      }
+    // Full precision on the WebAssembly backend, and on WebGPU for the two
+    // models most people run.
+    //
+    // WebAssembly: `q8` fails outright on ONNX Runtime's wasm backend for these
+    // Whisper exports -- session creation dies on a missing scale.
+    //
+    // WebGPU: `q8` loads, and is the slow choice. Measured on the default model
+    // over 62 s of speech (APP-125): q8 65.5 s, fp32 11.7 s, identical text;
+    // the reporter's Intel laptop saw the same, 38 s against 12 s on the model
+    // alone. The quantised decoder is most of it -- fp32 encoder with a q8
+    // decoder still took 26 s. fp16 wrote nonsense. The cost is the download,
+    // 291 MB for Base rather than 77, which the model list states.
+    //
+    // Small and Turbo stay q8 on WebGPU: in full precision they are roughly a
+    // gigabyte and several gigabytes.
+    dtype: device.device === "webgpu" ? gpuDtype(model) : "fp32",
+    progress_callback: (event: { status?: string; file?: string; loaded?: number; total?: number }) => {
+      if (event.status !== "progress" || !event.file) return;
+      const fraction = download.update(event.file, event.loaded ?? 0, event.total ?? 0);
+      if (fraction === null) return;
+      options.onProgress?.({
+        stage: "model",
+        fraction,
+        note: t("run.downloadingModel", { percent: Math.floor(fraction * 100) }),
+      });
     },
   });
 
@@ -1110,6 +1229,24 @@ export async function transcribe(options: Options): Promise<Transcribed> {
       ? [{ from: 0, to: options.pcm.length, language: named[0] ?? "en" }]
       : await languageRuns(transcriber, options.pcm, named, options.onProgress, options.signal);
 
+  // Where the pass has reached, for the progress line. The pipeline reports
+  // nothing while it works, so its calls into the model are counted instead:
+  // it makes exactly one per 30-second window, in order, and `whisperWindows`
+  // says how many there will be. Before this the screen sat on "Downloading
+  // the speech model (100%)" for the four minutes a WebAssembly pass takes,
+  // which reads as a hang (APP-126).
+  const total = options.pcm.length;
+  const jump = (CHUNK_LENGTH_S - 2 * STRIDE_LENGTH_S) * TARGET_SAMPLE_RATE;
+  const reportAt = (reached: number) =>
+    options.onProgress?.({
+      stage: "transcribing",
+      fraction: Math.min(1, reached / total),
+      note: t("run.transcribingAt", {
+        done: clock(Math.min(reached, total)),
+        total: clock(total),
+      }),
+    });
+
   const chunks: Chunk[] = [];
   const heard: string[] = [];
   const spoken = new Map<string, number>();
@@ -1128,6 +1265,10 @@ export async function transcribe(options: Options): Promise<Transcribed> {
     // way is what the overrun is for, transcribing the next speaker in the
     // wrong language is what it must not become.
     const readTo = Math.min(run.to + LEAD_OUT_S * TARGET_SAMPLE_RATE, options.pcm.length);
+    reportAt(run.from);
+    const stopCounting = countWindows(transcriber, (done) =>
+      reportAt(Math.min(run.to, run.from + done * jump + STRIDE_LENGTH_S * TARGET_SAMPLE_RATE)),
+    );
     const result = await transcriber(options.pcm.slice(run.from, readTo), {
       return_timestamps: true,
       // Whisper's context is 30 seconds; longer audio is windowed, with overlap
@@ -1142,7 +1283,7 @@ export async function transcribe(options: Options): Promise<Transcribed> {
       ...(englishOnly
         ? {}
         : { language: run.language, task: options.translate ? "translate" : "transcribe" }),
-    });
+    }).finally(stopCounting);
 
     // Timestamps come back relative to the slice, so they are put back on the
     // recording's own timeline before anything downstream sees them.

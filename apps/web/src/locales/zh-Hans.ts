@@ -138,7 +138,7 @@ export const zhHans: Catalogue = {
   "record.handoffHeading": "来自你的 {platform} 通话",
   "record.handoffDirect":
     "该标签页的声音已经选好。按下开始之前不会录制任何内容，按下之后也不会离开这个浏览器。",
-  "record.handoffPicker": "通往该标签页的快捷方式已失效，因此仍会询问共享哪个标签页。请勾选“共享标签页音频”。",
+  "record.handoffPicker": "Chrome 不允许网页里的按钮获取其他标签页的声音，因此仍会询问共享哪个标签页。请选择会议所在的标签页并勾选“共享标签页音频”，否则只会录到你的麦克风。",
   "record.agreeHeading": "你所确认的内容",
   "record.agreeNote":
     "这段文字会一字不差地随录音保存，所以日后修改这段措辞，也无法改写你此刻确认过的内容。",
@@ -424,6 +424,7 @@ export const zhHans: Catalogue = {
     "两种语言都会侦听，每一段都用实际所说的那一种转写。指明语言可以避免检测跑到第三种去。",
   "run.listeningForLanguage": "正在辨识语言",
   "run.rereading": "重新识别这 {seconds} 秒——识别器漏掉了",
+  "run.transcribingAt": "正在转写 {done} / {total}",
   "privacy.languageHint": "Whisper 支持 99 种。除非它总是猜错，否则保持自动检测即可。",
   "privacy.translateToEnglish": "转录时同步译成英文",
   "privacy.translateHint":

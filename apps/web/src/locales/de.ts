@@ -151,7 +151,7 @@ export const de: Catalogue = {
   "record.handoffDirect":
     "Der Ton dieses Tabs ist bereits ausgewählt. Bis Sie auf Start drücken, wird nichts aufgenommen — und danach verlässt nichts diesen Browser.",
   "record.handoffPicker":
-    "Die Abkürzung zu diesem Tab ist abgelaufen, deshalb werden Sie gefragt, welchen Tab Sie teilen möchten. Kreuzen Sie „Tab-Audio teilen“ an.",
+    "Chrome erlaubt einer Schaltfläche in einer Webseite nicht, den Ton eines anderen Tabs aufzunehmen, deshalb werden Sie gefragt, welchen Tab Sie teilen möchten. Wählen Sie den Tab mit der Besprechung und kreuzen Sie „Tab-Audio teilen“ an – sonst wird nur Ihr Mikrofon aufgenommen.",
   "record.agreeHeading": "Womit Sie sich einverstanden erklären",
   "record.agreeNote":
     "Wortwörtlich zusammen mit dieser Aufnahme gespeichert — eine spätere Änderung dieses Textes kann also nicht umschreiben, wozu Sie jetzt Ihr Einverständnis geben.",
@@ -457,6 +457,7 @@ export const de: Catalogue = {
     "Auf beide Sprachen wird gehört, und jeder Abschnitt wird in der tatsächlich gesprochenen transkribiert. Sie zu benennen verhindert, dass die Erkennung in eine dritte abdriftet.",
   "run.listeningForLanguage": "Hört auf die Sprache",
   "run.rereading": "Liest {seconds}s noch einmal — die Erkennung hat sie übersprungen",
+  "run.transcribingAt": "Transkribiert {done} von {total}",
   "privacy.languageHint":
     "Whisper beherrscht 99. Lassen Sie es auf Erkennen, außer es rät immer wieder falsch.",
   "privacy.translateToEnglish": "Beim Transkribieren ins Englische übersetzen",

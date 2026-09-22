@@ -20,7 +20,7 @@
 
 import * as engine from "../engine";
 import { el, mount } from "../lib/dom";
-import { t } from "../lib/i18n";
+import { t, listFormat } from "../lib/i18n";
 import {
   balance,
   InsufficientCredits,
@@ -72,7 +72,7 @@ export function renderSummaryPanel(app: App, note: Note): Node {
       el(
         "p.small.faint",
         { style: "margin:.5rem 0 0" },
-        t("summary.cueLanguages", { languages: engine.cueLanguages().join("、") }),
+        t("summary.cueLanguages", { languages: listFormat(engine.cueLanguages()) }),
       ),
     );
   };
@@ -333,7 +333,7 @@ function redactionLine(note: Note): string {
   // than naming a Rust enum variant.
   const names = new Map(engine.redactions().map((r) => [r.kind, r.label]));
   const parts = report.counts.map(([kind, count]) => `${count} ${names.get(kind) ?? kind}`);
-  return t("summary.redactSome", { items: parts.join("、") });
+  return t("summary.redactSome", { items: listFormat(parts) });
 }
 
 function preview(app: App, note: Note, rendered: string): string {

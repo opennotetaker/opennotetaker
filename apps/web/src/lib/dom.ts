@@ -105,6 +105,15 @@ export function $(selector: string, root: ParentNode = document): HTMLElement | 
 /// megabytes and a data URI of that size is refused outright by some browsers,
 /// with no error a page can catch.
 export function download(filename: string, content: string | Blob, mime: string): void {
+  // APP-130. A CSV gets a UTF-8 byte-order mark, and only a CSV. Excel on
+  // Windows reads a BOM-less file in the system code page, so a Chinese or
+  // Japanese transcript opened by double-click came up as mojibake. Added here,
+  // where text becomes a file, rather than in the export itself: the BOM is an
+  // instruction to one spreadsheet program, not part of the transcript, and the
+  // same string is also shown in the on-screen preview.
+  if (typeof content === "string" && /^text\/csv\b/.test(mime) && !content.startsWith("\uFEFF")) {
+    content = "\uFEFF" + content;
+  }
   const blob = typeof content === "string" ? new Blob([content], { type: mime }) : content;
   const url = URL.createObjectURL(blob);
   const anchor = el("a", { href: url, download: filename }) as HTMLAnchorElement;

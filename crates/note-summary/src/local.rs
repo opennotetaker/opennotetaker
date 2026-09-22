@@ -77,7 +77,7 @@ pub fn summarise(transcript: &Transcript, options: &Options) -> Summary {
     let scores = term_scores(&sentences);
     let keywords = top_terms(&scores, options.max_keywords);
 
-    let mut action_items = Vec::new();
+    let mut action_items: Vec<ActionItem> = Vec::new();
     let mut decisions = Vec::new();
     let mut questions = Vec::new();
     // Which sentences already appear under a heading of their own, so the key
@@ -102,27 +102,65 @@ pub fn summarise(transcript: &Transcript, options: &Options) -> Summary {
     //    which is the cheaper failure.
     // 3. **An action cue beats a merely implied question.** "How do we get this
     //    done by Friday" with no question mark is work, not an enquiry.
-    for (index, sentence) in sentences.iter().enumerate() {
+    // The sentence the last action ended on, so a deadline said on its own
+    // straight after can join it.
+    let mut action_items_last_index: Option<usize> = None;
+    let mut index = 0;
+    while index < sentences.len() {
+        let sentence = &sentences[index];
         let lowered = sentence.text.to_lowercase();
         spoken_for.push(index);
+
+        // "…and ask for an answer" / "by Friday." -- speech recognition cuts
+        // a sentence wherever the speaker paused, and a deadline said after a
+        // breath arrives on its own. It belongs to the action just before it,
+        // not in a list of its own (APP-127, found on real audio).
+        if let Some(due) = trailing_deadline(&lowered) {
+            let follows = index > 0
+                && action_items_last_index == Some(index - 1)
+                && sentences[index - 1].speaker == sentence.speaker;
+            let previous = action_items.last_mut().filter(|_| follows);
+            if let Some(action) = previous {
+                action.text = join(&action.text, &sentence.text);
+                action.due = Some(due);
+                action_items_last_index = Some(index);
+                index += 1;
+                continue;
+            }
+        }
 
         if matches_any(&lowered, |c| c.decisions) {
             push_unique(&mut decisions, sentence.text.clone());
         } else if is_explicit_question(&sentence.text) {
             push_unique(&mut questions, sentence.text.clone());
-        } else if matches_any(&lowered, |c| c.actions) && action_items.len() < options.max_actions {
+        } else if is_action(&lowered) && action_items.len() < options.max_actions {
+            // "Action item for you." on its own is half an item: the task is
+            // whatever the same speaker says next, so the two are listed as
+            // one, verbatim, and neither is left behind as a key point.
+            let (text, lowered) = match lead_in_for(&sentences, index, &lowered) {
+                Some(next) => {
+                    spoken_for.push(next);
+                    let text = join(&sentence.text, &sentences[next].text);
+                    let lowered = text.to_lowercase();
+                    index = next;
+                    (text, lowered)
+                }
+                None => (sentence.text.clone(), lowered),
+            };
             action_items.push(ActionItem {
                 owner: owner_of(sentence, transcript),
                 due: due_of(&lowered),
-                text: sentence.text.clone(),
+                text,
                 at_ms: Some(sentence.start_ms),
             });
+            action_items_last_index = Some(index);
         } else if is_question(&sentence.text, &lowered) {
             push_unique(&mut questions, sentence.text.clone());
         } else {
             // Nothing claimed it, so it stays available as a key point.
             spoken_for.pop();
         }
+        index += 1;
     }
 
     let key_points = key_sentences(&sentences, &scores, options.max_key_points, &spoken_for);
@@ -249,6 +287,22 @@ fn is_cjk_stopword(term: &str) -> bool {
         "ため",
         "など",
         "から",
+        // Time and sequence words (APP-127). Every sentence that assigns
+        // work carries one, which is why 今天 was ranking as a topic.
+        "今天",
+        "明天",
+        "昨天",
+        "后天",
+        "後天",
+        "下周",
+        "下週",
+        "本周",
+        "本週",
+        "这周",
+        "這週",
+        "上周",
+        "上週",
+        "好的",
     ];
     CJK_STOPWORDS.contains(&term)
 }
@@ -302,12 +356,14 @@ fn term_scores(sentences: &[Sentence]) -> HashMap<String, f64> {
             // meaningless fragments that then rank as topics. Emitting
             // trigrams alongside lets the real word out-score its own debris,
             // and `top_terms` drops the fragments once the whole word is kept.
+            // Four-character terms as well -- 新版官网, 上线清单 -- or they
+            // surface as their two overlapping halves, 新版官 · 版官网 (APP-127).
             let chars: Vec<char> = sentence
                 .text
                 .chars()
                 .filter(|c| c.is_alphabetic())
                 .collect();
-            for size in [2usize, 3] {
+            for size in [2usize, 3, 4] {
                 for window in chars.windows(size) {
                     let term: String = window.iter().collect();
                     if !is_cjk_stopword(&term) && !spans_a_word_boundary(&term) {
@@ -511,6 +567,139 @@ fn matches_any(lowered: &str, pick: impl Fn(&cues::Cues) -> &'static [&'static s
         .any(|set| pick(set).iter().any(|cue| lowered.contains(cue)))
 }
 
+/// Is somebody being asked, or offering, to do something here?
+///
+/// Four ways a sentence qualifies, and one way it is ruled out:
+///
+/// - an action cue -- "I'll", "can you", 麻烦你 -- unless the sentence is one
+///   of the phrasings that only look like one: "let's start the meeting",
+///   我们需要一个明确的日期 (APP-127);
+/// - an instruction verb opening it: "Send the finance team an email today";
+/// - a pronoun followed straight by a deadline, which is how Chinese states a
+///   commitment with no modal at all: 我周五之前发给你, 你今天把清单发到群里;
+/// - a deadline shaped as a cut-off -- "by Friday", 周四下午之前. "Next week"
+///   can be when something happened; "before Thursday afternoon" is only ever
+///   when something is due.
+fn is_action(lowered: &str) -> bool {
+    if matches_any(lowered, |c| c.not_actions) {
+        return false;
+    }
+    matches_any(lowered, |c| c.actions)
+        || opens_with_imperative(lowered)
+        || person_with_deadline(lowered)
+        || has_cut_off(lowered)
+}
+
+fn has_cut_off(lowered: &str) -> bool {
+    deadlines(lowered).into_iter().any(|(start, end)| {
+        let phrase = &lowered[start..end];
+        ["by ", "before ", "until "]
+            .iter()
+            .any(|lead| phrase.starts_with(lead))
+            || ["之前", "以前", "前"]
+                .iter()
+                .any(|tail| phrase.ends_with(tail))
+    })
+}
+
+/// Whether the sentence opens with an instruction verb, after any discourse
+/// marker a speaker leads with ("okay, send it", "so then check the build").
+fn opens_with_imperative(lowered: &str) -> bool {
+    const MARKERS: &[&str] = &[
+        "okay", "ok", "so", "and", "then", "alright", "right", "also", "now",
+    ];
+    let mut rest = lowered.trim_start();
+    loop {
+        let stripped = MARKERS.iter().find_map(|m| {
+            rest.strip_prefix(m)
+                .filter(|after| after.starts_with([',', ' ']))
+                .map(|after| after.trim_start_matches([',', ' ']))
+        });
+        match stripped {
+            Some(after) => rest = after,
+            None => break,
+        }
+    }
+    cues::ALL
+        .iter()
+        .any(|set| set.imperatives.iter().any(|verb| rest.starts_with(verb)))
+}
+
+/// A clause opening with a pronoun and then, immediately, a deadline.
+///
+/// Immediately is the whole test: 我周五之前发给你 is a commitment, 我觉得周五
+/// 可能来不及 is an opinion that mentions Friday. And a deadline followed by a
+/// description rather than a verb -- 我今天很忙 -- is ruled out by its next
+/// character.
+fn person_with_deadline(lowered: &str) -> bool {
+    const DESCRIPTIVE: &[&str] = &[
+        "很", "太", "不", "没", "沒", "比较", "比較", "有点", "有點", "也", "是",
+    ];
+    lowered.split(['，', ',', '、', '；']).any(|clause| {
+        let clause = clause.trim();
+        cues::ALL
+            .iter()
+            .flat_map(|set| set.persons.iter())
+            .any(|person| {
+                let Some(rest) = clause.strip_prefix(person) else {
+                    return false;
+                };
+                let Some(due) = deadline_at_start(rest) else {
+                    return false;
+                };
+                let after = &rest[due..];
+                !after.is_empty() && !DESCRIPTIVE.iter().any(|d| after.starts_with(d))
+            })
+    })
+}
+
+/// How many bytes of `text` a deadline occupies, when one opens it.
+fn deadline_at_start(text: &str) -> Option<usize> {
+    deadlines(text)
+        .into_iter()
+        .filter(|(start, _)| *start == 0)
+        .map(|(_, end)| end)
+        .max()
+}
+
+/// The deadline, when that is all the sentence is: "By Friday.", 周四下午之前。
+fn trailing_deadline(lowered: &str) -> Option<String> {
+    let due = due_of(lowered)?;
+    let rest = lowered.replacen(due.as_str(), "", 1);
+    let left = if is_spaceless(lowered) {
+        rest.chars().filter(|c| c.is_alphabetic()).count() <= 1
+    } else {
+        words(&rest).len() <= 1
+    };
+    left.then_some(due)
+}
+
+/// The sentence after a lead-in, when `index` is one and there is one.
+///
+/// Short, and followed by the same speaker: "Action item for you." then the
+/// task. A long sentence carrying the label has already said the task itself.
+fn lead_in_for(sentences: &[Sentence], index: usize, lowered: &str) -> Option<usize> {
+    if !matches_any(lowered, |c| c.lead_ins) {
+        return None;
+    }
+    let short = if is_spaceless(lowered) {
+        lowered.chars().filter(|c| c.is_alphabetic()).count() <= 8
+    } else {
+        words(lowered).len() <= 5
+    };
+    let next = sentences.get(index + 1)?;
+    (short && next.speaker == sentences[index].speaker).then_some(index + 1)
+}
+
+/// Two sentences as one quote, spaced the way their script is.
+fn join(first: &str, second: &str) -> String {
+    if is_spaceless(first) && is_spaceless(second) {
+        format!("{first}{second}")
+    } else {
+        format!("{first} {second}")
+    }
+}
+
 /// Is this sentence asking something?
 ///
 /// Three tests, because three families of language mark a question in three
@@ -607,14 +796,89 @@ fn owner_of(sentence: &Sentence, transcript: &Transcript) -> Option<String> {
 ///
 /// The longest match wins: "by the end of the week" and "this week" both match
 /// the same sentence, and reporting the shorter one loses the part that
-/// mattered.
+/// mattered -- 周四下午之前 rather than 周四.
 fn due_of(lowered: &str) -> Option<String> {
-    cues::ALL
-        .iter()
-        .flat_map(|set| set.due.iter())
-        .filter(|cue| lowered.contains(**cue))
-        .max_by_key(|cue| cue.len())
-        .map(|cue| cue.to_string())
+    deadlines(lowered)
+        .into_iter()
+        .max_by_key(|(start, end)| (lowered[*start..*end].chars().count(), usize::MAX - start))
+        .map(|(start, end)| lowered[start..end].to_string())
+}
+
+/// Every deadline phrase in the sentence, as byte ranges.
+///
+/// The fixed lists, plus weekdays in any of the ways they are said -- "by next
+/// Tuesday", 下周二, 星期四 -- which a fixed list would need dozens of entries
+/// to cover and still miss 周四下午之前 (APP-127). A Chinese phrase then takes
+/// the time of day and the 之前 that follow it, since "Thursday afternoon, at
+/// the latest" is the deadline and "Thursday" is only most of it.
+fn deadlines(lowered: &str) -> Vec<(usize, usize)> {
+    const WEEKDAYS: &[&str] = &[
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ];
+    const WEEKDAY_LEADS: &[&str] = &[
+        "by next ", "by this ", "by ", "before ", "until ", "next ", "this ", "on ",
+    ];
+    const CJK_WEEK: &[&str] = &["星期", "礼拜", "禮拜", "周", "週"];
+    const CJK_DAYS: &[char] = &['一', '二', '三', '四', '五', '六', '日', '天', '末'];
+    const CJK_LEADS: &[&str] = &["下个", "下個", "下", "本", "这", "這", "上"];
+    const TIME_OF_DAY: &[&str] = &["上午", "下午", "晚上", "中午", "早上", "下班"];
+    const BEFORE: &[&str] = &["之前", "以前", "前"];
+
+    let mut found: Vec<(usize, usize)> = Vec::new();
+    for cue in cues::ALL.iter().flat_map(|set| set.due.iter()) {
+        found.extend(
+            lowered
+                .match_indices(cue)
+                .map(|(at, _)| (at, at + cue.len())),
+        );
+    }
+    for day in WEEKDAYS {
+        for (at, _) in lowered.match_indices(day) {
+            let lead = WEEKDAY_LEADS
+                .iter()
+                .find(|lead| lowered[..at].ends_with(**lead))
+                .map_or(0, |lead| lead.len());
+            found.push((at - lead, at + day.len()));
+        }
+    }
+    for week in CJK_WEEK {
+        for (at, _) in lowered.match_indices(week) {
+            let after = at + week.len();
+            let Some(day) = lowered[after..]
+                .chars()
+                .next()
+                .filter(|c| CJK_DAYS.contains(c))
+            else {
+                continue;
+            };
+            let lead = CJK_LEADS
+                .iter()
+                .find(|lead| lowered[..at].ends_with(**lead))
+                .map_or(0, |lead| lead.len());
+            found.push((at - lead, after + day.len_utf8()));
+        }
+    }
+    for (_, end) in found.iter_mut() {
+        if lowered[..*end].ends_with(|c: char| c.is_ascii()) {
+            continue;
+        }
+        if let Some(time) = TIME_OF_DAY
+            .iter()
+            .find(|t| lowered[*end..].starts_with(**t))
+        {
+            *end += time.len();
+        }
+        if let Some(before) = BEFORE.iter().find(|b| lowered[*end..].starts_with(**b)) {
+            *end += before.len();
+        }
+    }
+    found
 }
 
 fn push_unique(list: &mut Vec<String>, value: String) {
@@ -1050,6 +1314,163 @@ mod tests {
         assert_eq!(
             summary.action_items[0].due.as_deref(),
             Some("by the end of the week")
+        );
+    }
+
+    fn said(lines: &[(&str, &str)]) -> Transcript {
+        Transcript::from_segments(
+            Source::Recorded,
+            lines
+                .iter()
+                .enumerate()
+                .map(|(i, (speaker, text))| {
+                    let at = i as i64 * 5_000;
+                    Segment::new(at, at + 5_000, *text).with_speaker(*speaker)
+                })
+                .collect(),
+        )
+    }
+
+    fn actions(summary: &Summary) -> Vec<&str> {
+        summary
+            .action_items
+            .iter()
+            .map(|a| a.text.as_str())
+            .collect()
+    }
+
+    /// APP-127, the reporter's own dialogue, as speech recognition splits it:
+    /// the label and the task arrive as separate sentences.
+    #[test]
+    fn a_spoken_action_item_is_the_task_and_not_its_label() {
+        let summary = summarise(
+            &said(&[
+                ("S0", "Let's start the weekly planning meeting."),
+                ("S0", "Okay. Action item for you."),
+                (
+                    "S0",
+                    "Send the finance team an email today and ask for an answer by Friday.",
+                ),
+                ("S1", "Sure, I will do that after this call."),
+                ("S0", "你今天把上线清单发到群里。"),
+                ("S1", "好的，我周五之前发给你。"),
+            ]),
+            &Options::default(),
+        );
+        let listed = actions(&summary);
+        assert!(
+            !listed.iter().any(|a| a.starts_with("Let's start")),
+            "{listed:?}"
+        );
+        assert!(!listed.contains(&"Action item for you."), "{listed:?}");
+        let task = summary
+            .action_items
+            .iter()
+            .find(|a| a.text.contains("Send the finance team"))
+            .expect("the finance email is an action");
+        assert_eq!(task.due.as_deref(), Some("by friday"));
+        assert!(listed.contains(&"你今天把上线清单发到群里。"), "{listed:?}");
+        assert!(listed.contains(&"好的，我周五之前发给你。"), "{listed:?}");
+        assert!(!summary
+            .key_points
+            .iter()
+            .any(|k| k.contains("finance") || k.contains("清单")));
+    }
+
+    /// Found on real audio: Whisper cut the deadline off after a pause.
+    #[test]
+    fn a_deadline_said_after_a_pause_joins_its_action() {
+        let summary = summarise(
+            &said(&[
+                ("S0", "Okay, action item for you, send the finance team an email today and ask for an answer"),
+                ("S0", "by Friday."),
+                ("S1", "Great, then let's look at the budget review on Thursday afternoon."),
+            ]),
+            &Options::default(),
+        );
+        assert_eq!(summary.action_items.len(), 1, "{:?}", actions(&summary));
+        let action = &summary.action_items[0];
+        assert!(
+            action.text.ends_with("ask for an answer by Friday."),
+            "{}",
+            action.text
+        );
+        assert_eq!(action.due.as_deref(), Some("by friday"));
+    }
+
+    #[test]
+    fn chinese_deadlines_are_read_to_the_end() {
+        assert_eq!(
+            due_of("新版官网的移动端要在周四下午之前测完。").as_deref(),
+            Some("周四下午之前")
+        );
+        assert_eq!(due_of("新版官网下周二上线").as_deref(), Some("下周二"));
+        assert_eq!(due_of("我周五之前发给你").as_deref(), Some("周五之前"));
+        assert_eq!(
+            due_of("send it by next tuesday").as_deref(),
+            Some("by next tuesday")
+        );
+        let summary = summarise(
+            &said(&[("S0", "新版官网的移动端要在周四下午之前测完。")]),
+            &Options::default(),
+        );
+        assert_eq!(summary.action_items[0].due.as_deref(), Some("周四下午之前"));
+    }
+
+    #[test]
+    fn a_need_or_a_description_is_not_a_task() {
+        let summary = summarise(
+            &said(&[
+                ("S0", "我们需要一个明确的日期。"),
+                ("S1", "我今天很忙。"),
+                ("S0", "我觉得周五可能来不及。"),
+            ]),
+            &Options::default(),
+        );
+        assert!(summary.action_items.is_empty(), "{:?}", actions(&summary));
+    }
+
+    #[test]
+    fn topics_carry_no_time_words_and_no_halves_of_a_word() {
+        let summary = summarise(
+            &said(&[
+                (
+                    "S0",
+                    "Today we look at the website first, and the mobile layout next.",
+                ),
+                (
+                    "S1",
+                    "For the website, the mobile layout comes first, the finance review next.",
+                ),
+                (
+                    "S0",
+                    "The finance review is for today, the website for tomorrow.",
+                ),
+                ("S0", "新版官网下周二上线，新版官网的首页还没定稿。"),
+                ("S1", "新版官网的移动端今天要测完。"),
+            ]),
+            &Options::default(),
+        );
+        for word in [
+            "for",
+            "today",
+            "first",
+            "next",
+            "tomorrow",
+            "今天",
+            "新版官",
+            "版官网",
+        ] {
+            assert!(
+                !summary.keywords.iter().any(|k| k == word),
+                "{word} in {:?}",
+                summary.keywords
+            );
+        }
+        assert!(
+            summary.keywords.iter().any(|k| k == "新版官网"),
+            "{:?}",
+            summary.keywords
         );
     }
 

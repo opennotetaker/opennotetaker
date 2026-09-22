@@ -12,7 +12,7 @@
 
 import * as engine from "../engine";
 import { el, mount } from "../lib/dom";
-import { current, LOCALES, setLocale, t, type LocaleCode } from "../lib/i18n";
+import { current, LOCALES, setLocale, t, type LocaleCode, listFormat } from "../lib/i18n";
 import { AUTH_URL, API_URL } from "../lib/account";
 import { LANGUAGES, MODELS } from "../lib/transcribe";
 import type { App } from "../main";
@@ -89,7 +89,7 @@ export async function renderPrivacy(app: App): Promise<Node> {
           el("span", t("privacy.redactLabel")),
           el(
             "span.hint",
-            t("privacy.redactHint", { kinds: kinds.map((k) => k.label).join("、") }),
+            t("privacy.redactHint", { kinds: listFormat(kinds.map((k) => k.label)) }),
           ),
         ),
       ),

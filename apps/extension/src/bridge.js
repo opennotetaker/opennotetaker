@@ -14,23 +14,42 @@
 
 const CHANNEL = "opennotetaker-extension";
 
+// Whether the page has said it is listening, and the handover waiting until it
+// does.
+//
+// APP-123. This script runs at document_start; the app attaches its listener
+// about a second later, once its module graph has loaded. A handover posted in
+// between reached a page with nothing listening and was simply gone -- and
+// because relaying it *succeeded* as far as the service worker could tell, its
+// retry loop (which only retries when there is no bridge at all) never fired.
+// The tab opened on the record screen and never learned which meeting it was
+// for. The page says hello the moment its listener exists, so the bridge holds
+// the handover until then.
+let pageListening = false;
+let pending = null;
+
+function post(handoff) {
+  window.postMessage(handoff, location.origin);
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, respond) => {
   if (message?.type === "opennotetaker:ping") {
     respond({ ok: true });
     return true;
   }
   if (message?.type === "opennotetaker:handoff") {
-    window.postMessage(
-      {
-        channel: CHANNEL,
-        type: "handoff",
-        streamId: message.streamId ?? null,
-        platform: message.platform ?? "",
-        title: message.title ?? "",
-        reason: message.reason ?? null,
-      },
-      location.origin,
-    );
+    const handoff = {
+      channel: CHANNEL,
+      type: "handoff",
+      streamId: message.streamId ?? null,
+      platform: message.platform ?? "",
+      title: message.title ?? "",
+      reason: message.reason ?? null,
+    };
+    // One handover in flight at a time: a second click replaces the first
+    // rather than queueing behind it, so the app opens on the latest meeting.
+    if (pageListening) post(handoff);
+    else pending = handoff;
     respond({ ok: true });
     return true;
   }
@@ -48,7 +67,12 @@ window.addEventListener("message", (event) => {
   if (event.source !== window) return;
   if (event.data?.channel !== "opennotetaker-page") return;
   if (event.data.type === "hello") {
+    pageListening = true;
     announce();
+    if (pending) {
+      post(pending);
+      pending = null;
+    }
     // Proof, rather than assumption, that this tab is the app. The bridge is
     // injected into every page on the configured origin -- which for somebody
     // running it locally means every page on localhost -- and a meeting handed

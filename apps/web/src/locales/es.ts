@@ -149,7 +149,7 @@ export const es: Catalogue = {
   "record.handoffDirect":
     "El sonido de esa pestaña ya está elegido. No se captura nada hasta que pulses empezar, y después nada sale de este navegador.",
   "record.handoffPicker":
-    "El atajo a esa pestaña ha caducado, así que se te preguntará qué pestaña compartir. Marca «compartir audio de la pestaña».",
+    "Chrome no permite que un botón dentro de una página web capture el sonido de otra pestaña, así que se te preguntará qué pestaña compartir. Elige la pestaña de la reunión y marca «compartir audio de la pestaña»; si no, solo se grabará tu micrófono.",
   "record.agreeHeading": "Con qué estás de acuerdo",
   "record.agreeNote":
     "Se guarda palabra por palabra con esta grabación, de modo que cambiar este texto más adelante no puede reescribir lo que aceptas ahora.",
@@ -455,6 +455,7 @@ export const es: Catalogue = {
     "Se escuchan ambos idiomas, y cada tramo se transcribe en el que se está hablando de verdad. Nombrarlos evita que la detección se desvíe hacia un tercero.",
   "run.listeningForLanguage": "Escuchando para saber el idioma",
   "run.rereading": "Releyendo {seconds} s — el reconocedor se los saltó",
+  "run.transcribingAt": "Transcribiendo {done} de {total}",
   "privacy.languageHint":
     "Whisper maneja 99. Déjalo en detección automática salvo que siga acertando mal.",
   "privacy.translateToEnglish": "Traducir al inglés mientras transcribe",

@@ -149,7 +149,7 @@ export const ko: Catalogue = {
   "record.handoffDirect":
     "그 탭의 소리는 이미 선택되어 있습니다. 시작을 누르기 전에는 아무것도 수록되지 않고, 누른 뒤에도 이 브라우저를 나가는 것은 없습니다.",
   "record.handoffPicker":
-    "그 탭으로 가는 지름길이 만료되어, 어느 탭을 공유할지 묻게 됩니다. “탭 오디오 공유”를 체크하세요.",
+    "Chrome은 웹 페이지 안의 버튼이 다른 탭의 소리를 가져오는 것을 허용하지 않으므로, 어느 탭을 공유할지 묻게 됩니다. 회의 탭을 선택하고 “탭 오디오 공유”를 체크하세요. 체크하지 않으면 마이크만 녹음됩니다.",
   "record.agreeHeading": "동의하시는 내용",
   "record.agreeNote":
     "이 녹음과 함께 한 글자도 바꾸지 않고 저장되므로, 나중에 이 문구를 바꾸더라도 지금 동의한 내용은 달라지지 않습니다.",
@@ -455,6 +455,7 @@ export const ko: Catalogue = {
     "두 언어를 모두 듣고, 각 구간을 실제로 말해진 언어로 받아씁니다. 지정해 두면 감지가 세 번째 언어로 흘러가는 것을 막습니다.",
   "run.listeningForLanguage": "언어를 가려내는 중",
   "run.rereading": "{seconds}초를 다시 읽는 중 — 인식기가 건너뛴 부분입니다",
+  "run.transcribingAt": "받아쓰는 중 {done} / {total}",
   "privacy.languageHint":
     "Whisper는 99개 언어를 다룹니다. 계속 잘못 추측하지 않는 한 자동 감지로 두세요.",
   "privacy.translateToEnglish": "받아쓰면서 영어로 번역",

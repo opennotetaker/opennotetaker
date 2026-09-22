@@ -16,7 +16,7 @@
 import * as engine from "../engine";
 import { el, mount } from "../lib/dom";
 import { t } from "../lib/i18n";
-import { transcribe, NoSpeechError } from "../lib/transcribe";
+import { transcribe, NoSpeechError, type Progress } from "../lib/transcribe";
 import type { App } from "../main";
 import type { Note } from "../types";
 
@@ -27,6 +27,15 @@ export interface Report {
 
 /// Run a note from raw audio to stored and open.
 ///
+/// Where on the bar each transcription stage runs. The download is short on
+/// a return visit and the pass itself is the long part, so that gets most of it.
+const STAGE_SPAN: Record<Progress["stage"], [number, number]> = {
+  listening: [0.25, 0.28],
+  model: [0.28, 0.4],
+  language: [0.4, 0.48],
+  transcribing: [0.48, 0.74],
+};
+
 /// `getPcm` differs between the two callers; everything else does not.
 export async function runTranscription(
   app: App,
@@ -45,6 +54,10 @@ export async function runTranscription(
   const track = el("div.progress.indeterminate", bar);
   const cancelled = new AbortController();
 
+  // The furthest the bar has been. A stage that starts again from zero must
+  // not drag it back: a bar that runs backwards reads as something having
+  // gone wrong, which is how APP-126 was reported.
+  let reached = 0;
   const report = ({ fraction, note: text }: Report) => {
     label.textContent = text;
     if (fraction === null) {
@@ -52,7 +65,8 @@ export async function runTranscription(
       bar.style.width = "35%";
     } else {
       track.classList.remove("indeterminate");
-      bar.style.width = `${Math.round(Math.max(0, Math.min(1, fraction)) * 100)}%`;
+      reached = Math.max(reached, Math.max(0, Math.min(1, fraction)));
+      bar.style.width = `${Math.round(reached * 100)}%`;
     }
   };
 
@@ -96,14 +110,12 @@ export async function runTranscription(
       translate: app.settings.translateToEnglish,
       signal: cancelled.signal,
       skipVoiceCheck,
-      onProgress: ({ fraction, note: text }) =>
-        report({
-          // The model download is the first quarter of the bar; the
-          // transcription itself cannot report a fraction (Whisper's pipeline
-          // does not surface one), so it runs indeterminate.
-          fraction: fraction === null ? null : 0.25 + fraction * 0.35,
-          note: text,
-        }),
+      onProgress: ({ stage, fraction, note: text }) => {
+        // Each stage its own stretch of the bar, in the order they run, after
+        // reading the file (0-25%) and before working out who spoke (75%).
+        const [from, to] = STAGE_SPAN[stage];
+        report({ fraction: fraction === null ? null : from + fraction * (to - from), note: text });
+      },
     });
     if (cancelled.signal.aborted) throw new DOMException("aborted", "AbortError");
 

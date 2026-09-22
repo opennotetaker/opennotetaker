@@ -57,6 +57,26 @@ pub struct Cues {
     pub first_person: &'static [&'static str],
     /// What follows a name when the name is the owner: "Ana **will** send it".
     pub owner_markers: &'static [&'static str],
+    /// Phrasings that wear an action cue and are not an action. "Let's start
+    /// the weekly planning meeting" matches "let's " and is the chair opening
+    /// the call; listing it first under Action items is the quickest way to
+    /// teach a reader the list is noise (APP-127).
+    pub not_actions: &'static [&'static str],
+    /// Words that announce an action rather than state one. Spoken, "Action
+    /// item for you. Send the finance team an email" arrives as two sentences,
+    /// and the label alone is half an item -- so a short sentence carrying one
+    /// is joined to the next thing the same speaker said.
+    pub lead_ins: &'static [&'static str],
+    /// Verbs that make a sentence an instruction when they open it: "Send the
+    /// finance team an email today". Matched only at the start, after a
+    /// discourse marker such as "okay," -- anywhere else "send" is just a word.
+    pub imperatives: &'static [&'static str],
+    /// Pronouns that, followed straight by a deadline, make a clause a
+    /// commitment or an instruction: 我周五之前发给你, 你今天把清单发到群里.
+    /// Chinese states both with no modal at all, so without this neither has
+    /// anything for the action list to match. Empty where the language marks
+    /// a commitment with a modal the `actions` list already carries.
+    pub persons: &'static [&'static str],
 }
 
 pub const ALL: &[Cues] = &[
@@ -162,6 +182,13 @@ const ENGLISH: Cues = Cues {
         "next quarter",
         "today",
         "tomorrow",
+        "end of day",
+        "end of the week",
+        "after this call",
+        "after the call",
+        "after the meeting",
+        "asap",
+        "as soon as possible",
     ],
     first_person: &["i'll ", "i will ", "i'm going to ", "i can ", "i'd better "],
     owner_markers: &[
@@ -172,6 +199,52 @@ const ENGLISH: Cues = Cues {
         " can ",
         " owns ",
     ],
+    not_actions: &[
+        "let's start",
+        "let's begin",
+        "let's get started",
+        "let's kick off",
+        "let's kick things off",
+        "let's get going",
+        "let's move on",
+        "let's wrap up",
+        "let's continue",
+        "let's look at",
+        "let's go through",
+        "let's go over",
+        "let's talk about",
+        "let's discuss",
+        "let us start",
+        "let us begin",
+    ],
+    lead_ins: &["action item", "to-do", "todo", "next step"],
+    imperatives: &[
+        "send ",
+        "email ",
+        "call ",
+        "book ",
+        "share ",
+        "update ",
+        "review ",
+        "check ",
+        "finish ",
+        "write ",
+        "prepare ",
+        "schedule ",
+        "fix ",
+        "draft ",
+        "set up ",
+        "ask ",
+        "tell ",
+        "remind ",
+        "confirm ",
+        "submit ",
+        "forward ",
+        "ping ",
+        "reach out",
+        "get back to ",
+    ],
+    persons: &[],
 };
 
 const SIMPLIFIED: Cues = Cues {
@@ -251,6 +324,17 @@ const SIMPLIFIED: Cues = Cues {
     ],
     first_person: &["我会", "我来", "我去", "我负责", "我跟进"],
     owner_markers: &["会", "来", "负责", "跟进", "去"],
+    not_actions: &[
+        "我们开始",
+        "开始吧",
+        "需要一个",
+        "需要一些",
+        "今天就到这",
+        "先到这里",
+    ],
+    lead_ins: &["行动项", "待办"],
+    imperatives: &[],
+    persons: &["我们", "你们", "我", "你", "您"],
 };
 
 /// Traditional Chinese.
@@ -333,6 +417,17 @@ const TRADITIONAL: Cues = Cues {
     ],
     first_person: &["我會", "我來", "我去", "我負責", "我跟進"],
     owner_markers: &["會", "來", "負責", "跟進", "去"],
+    not_actions: &[
+        "我們開始",
+        "開始吧",
+        "需要一個",
+        "需要一些",
+        "今天就到這",
+        "先到這裡",
+    ],
+    lead_ins: &["行動項", "待辦"],
+    imperatives: &[],
+    persons: &["我們", "你們", "我", "你", "您"],
 };
 
 const JAPANESE: Cues = Cues {
@@ -389,6 +484,10 @@ const JAPANESE: Cues = Cues {
     ],
     first_person: &["私が", "僕が", "やります", "対応します"],
     owner_markers: &["さんが", "さんは", "が担当", "がやり"],
+    not_actions: &["始めましょう", "始めます"],
+    lead_ins: &["アクションアイテム"],
+    imperatives: &[],
+    persons: &[],
 };
 
 const KOREAN: Cues = Cues {
@@ -428,6 +527,10 @@ const KOREAN: Cues = Cues {
     ],
     first_person: &["제가", "저는", "하겠습니다"],
     owner_markers: &["님이", "씨가", "이 담당"],
+    not_actions: &["시작하겠습니다", "시작합시다"],
+    lead_ins: &["액션 아이템"],
+    imperatives: &[],
+    persons: &[],
 };
 
 const SPANISH: Cues = Cues {
@@ -479,6 +582,10 @@ const SPANISH: Cues = Cues {
     ],
     first_person: &["voy a ", "me encargo", "yo lo "],
     owner_markers: &[" va a ", " se encarga", " tiene que "],
+    not_actions: &["empecemos", "vamos a empezar", "comencemos"],
+    lead_ins: &[],
+    imperatives: &[],
+    persons: &[],
 };
 
 const FRENCH: Cues = Cues {
@@ -531,6 +638,10 @@ const FRENCH: Cues = Cues {
     ],
     first_person: &["je vais ", "je m'occupe", "je le "],
     owner_markers: &[" va ", " doit ", " s'occupe"],
+    not_actions: &["commençons", "on commence"],
+    lead_ins: &[],
+    imperatives: &[],
+    persons: &[],
 };
 
 const GERMAN: Cues = Cues {
@@ -575,6 +686,14 @@ const GERMAN: Cues = Cues {
     ],
     first_person: &["ich werde ", "ich kümmere mich", "ich mache "],
     owner_markers: &[" wird ", " muss ", " kümmert sich"],
+    not_actions: &[
+        "fangen wir an",
+        "lass uns anfangen",
+        "lassen sie uns anfangen",
+    ],
+    lead_ins: &[],
+    imperatives: &[],
+    persons: &[],
 };
 
 const PORTUGUESE: Cues = Cues {
@@ -618,6 +737,10 @@ const PORTUGUESE: Cues = Cues {
     ],
     first_person: &["vou ", "eu cuido", "eu faço "],
     owner_markers: &[" vai ", " precisa ", " cuida"],
+    not_actions: &["vamos começar", "comecemos"],
+    lead_ins: &[],
+    imperatives: &[],
+    persons: &[],
 };
 
 #[cfg(test)]
@@ -658,6 +781,10 @@ mod tests {
                 .chain(cue.due)
                 .chain(cue.first_person)
                 .chain(cue.owner_markers)
+                .chain(cue.not_actions)
+                .chain(cue.lead_ins)
+                .chain(cue.imperatives)
+                .chain(cue.persons)
             {
                 assert_eq!(
                     *phrase,

@@ -223,8 +223,8 @@ const DOC_MAX_SPAN_MS: i64 = 30_000;
 
 pub fn export(transcript: &Transcript, format: Format, options: &ExportOptions) -> String {
     match format {
-        Format::Srt => srt(transcript),
-        Format::Vtt => vtt(transcript),
+        Format::Srt => srt(transcript, options),
+        Format::Vtt => vtt(transcript, options),
         Format::Text => text(transcript, options),
         Format::TextTimestamped => text_timestamped(transcript, options),
         Format::Markdown => markdown(transcript, options),
@@ -234,7 +234,7 @@ pub fn export(transcript: &Transcript, format: Format, options: &ExportOptions) 
     }
 }
 
-fn srt(transcript: &Transcript) -> String {
+fn srt(transcript: &Transcript, options: &ExportOptions) -> String {
     let mut out = String::new();
     for (index, segment) in transcript.segments.iter().enumerate() {
         out.push_str(&format!("{}\n", index + 1));
@@ -243,13 +243,13 @@ fn srt(transcript: &Transcript) -> String {
             format_srt(segment.start_ms),
             format_srt(segment.end_ms)
         ));
-        out.push_str(&cue_text(transcript, segment));
+        out.push_str(&cue_text(transcript, segment, options.speakers));
         out.push_str("\n\n");
     }
     out
 }
 
-fn vtt(transcript: &Transcript) -> String {
+fn vtt(transcript: &Transcript, options: &ExportOptions) -> String {
     let mut out = String::from("WEBVTT\n\n");
     for segment in &transcript.segments {
         out.push_str(&format!(
@@ -257,7 +257,7 @@ fn vtt(transcript: &Transcript) -> String {
             format_vtt(segment.start_ms),
             format_vtt(segment.end_ms)
         ));
-        out.push_str(&cue_text(transcript, segment));
+        out.push_str(&cue_text(transcript, segment, options.speakers));
         out.push_str("\n\n");
     }
     out
@@ -268,7 +268,15 @@ fn vtt(transcript: &Transcript) -> String {
 /// `<v Ana>` is WebVTT's voice span; SRT has no such thing, but players
 /// overwhelmingly render the tag as literal text there, which is worse than
 /// the plain `Ana: ` prefix SRT files conventionally use.
-fn cue_text(transcript: &Transcript, segment: &Segment) -> String {
+///
+/// Only when asked. APP-128: "Include who said what" reached every other format
+/// and never these two -- `export` called `srt` and `vtt` without the options at
+/// all, so the prefix was written whether or not the box was ticked, and it is
+/// exactly the people making subtitles who least want it burned into a cue.
+fn cue_text(transcript: &Transcript, segment: &Segment, speakers: bool) -> String {
+    if !speakers {
+        return segment.text.clone();
+    }
     match segment
         .speaker
         .as_deref()
@@ -655,20 +663,57 @@ mod tests {
     #[test]
     fn subtitle_formats_never_merge_cues() {
         let t = transcript();
-        assert_eq!(srt(&t).matches("-->").count(), 3);
-        assert_eq!(vtt(&t).matches("-->").count(), 3);
+        assert_eq!(srt(&t, &ExportOptions::default()).matches("-->").count(), 3);
+        assert_eq!(vtt(&t, &ExportOptions::default()).matches("-->").count(), 3);
     }
 
     #[test]
     fn srt_numbers_cues_from_one_and_uses_comma_timestamps() {
-        let out = srt(&transcript());
+        let out = srt(&transcript(), &ExportOptions::default());
         assert!(out.starts_with("1\n00:00:00,000 --> 00:00:02,000\nAna: Morning everyone."));
         assert!(out.contains("\n3\n"));
     }
 
     #[test]
+    fn subtitles_leave_the_speaker_out_when_asked() {
+        // APP-128.
+        let t = transcript();
+        let without = ExportOptions {
+            speakers: false,
+            ..ExportOptions::default()
+        };
+        for format in [Format::Srt, Format::Vtt] {
+            let out = export(&t, format, &without);
+            assert!(
+                !out.contains("Ana"),
+                "{format:?} still names a speaker:\n{out}"
+            );
+            assert!(
+                !out.contains("Speaker"),
+                "{format:?} still names a speaker:\n{out}"
+            );
+        }
+    }
+
+    #[test]
+    fn subtitles_keep_the_speaker_when_asked() {
+        let t = transcript();
+        let with = ExportOptions {
+            speakers: true,
+            ..ExportOptions::default()
+        };
+        for format in [Format::Srt, Format::Vtt] {
+            let out = export(&t, format, &with);
+            assert!(
+                out.contains("Ana: Morning everyone."),
+                "{format:?} lost its prefix:\n{out}"
+            );
+        }
+    }
+
+    #[test]
     fn vtt_starts_with_its_magic_line() {
-        assert!(vtt(&transcript()).starts_with("WEBVTT\n\n"));
+        assert!(vtt(&transcript(), &ExportOptions::default()).starts_with("WEBVTT\n\n"));
     }
 
     /// The mirror invariant: a document is unreadable if it keeps Whisper's
@@ -892,7 +937,7 @@ mod tests {
             Source::Imported,
             vec![Segment::new(0, 1_000, "Just a voice note")],
         );
-        assert!(srt(&t).contains("\nJust a voice note"));
-        assert!(!srt(&t).contains(": Just"));
+        assert!(srt(&t, &ExportOptions::default()).contains("\nJust a voice note"));
+        assert!(!srt(&t, &ExportOptions::default()).contains(": Just"));
     }
 }

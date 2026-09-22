@@ -93,6 +93,18 @@ try {
   check("the meeting is noticed and the prompt is drawn", true);
   check("the prompt names the platform", heading.includes("Google Meet"), heading);
 
+  // Make the app as slow to start listening as it is in production. APP-123:
+  // served from localhost the module graph loads so fast that the page's
+  // message listener exists before the handover arrives, so this suite passed
+  // while every real user lost the handover -- over the network the listener
+  // attaches about a second after the bridge has already relayed it. Holding
+  // the entry bundle back recreates that gap deterministically; without the
+  // bridge's hold-until-hello this check fails.
+  await context.route(/\/assets\/index-[^/]+\.js$/, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await route.continue();
+  });
+
   const opened = context.waitForEvent("page");
   await prompt.getByRole("button", { name: "Record this meeting" }).click();
   const app = await opened;
@@ -120,6 +132,18 @@ try {
     .locator("input")
     .isChecked();
   check("the meeting tab is already chosen as the source", ticked);
+
+  // APP-124. A driven click is not an invocation, so this path never has a
+  // stream id -- and the card used to call that a shortcut which had "expired",
+  // for a shortcut that was never made. It has to say what is true, and warn
+  // about the one box whose omission records only the microphone.
+  const explained = await card.textContent();
+  check("the fallback never claims a shortcut expired", !/expired/i.test(explained), explained);
+  check(
+    "the fallback says why, and names the box to tick",
+    /button inside a web page/i.test(explained) && /Share tab audio/.test(explained),
+    explained,
+  );
 
   // A second meeting must land in the app tab that is already open, not in a
   // third one. Somebody who records two calls in an afternoon should not end

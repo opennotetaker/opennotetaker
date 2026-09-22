@@ -147,7 +147,7 @@ export const zhHant: Catalogue = {
   "record.handoffHeading": "來自你的 {platform} 通話",
   "record.handoffDirect":
     "該分頁的聲音已經選好。按下開始之前不會錄製任何內容，按下之後也不會離開這個瀏覽器。",
-  "record.handoffPicker": "通往該分頁的捷徑已失效，因此仍會詢問要分享哪個分頁。請勾選「分享分頁音訊」。",
+  "record.handoffPicker": "Chrome 不允許網頁裡的按鈕取得其他分頁的聲音，因此仍會詢問要分享哪個分頁。請選擇會議所在的分頁並勾選「分享分頁音訊」，否則只會錄到你的麥克風。",
   "record.agreeHeading": "你所確認的內容",
   "record.agreeNote":
     "這段文字會一字不差地隨錄音保存，所以日後修改這段措辭，也無法改寫你此刻確認過的內容。",
@@ -432,6 +432,7 @@ export const zhHant: Catalogue = {
     "兩種語言都會聆聽，每一段都以實際所說的那一種轉寫。指明語言可以避免偵測跑到第三種去。",
   "run.listeningForLanguage": "正在辨識語言",
   "run.rereading": "重新辨識這 {seconds} 秒——辨識器漏掉了",
+  "run.transcribingAt": "正在轉寫 {done} / {total}",
   "privacy.languageHint": "Whisper 支援 99 種。除非它老是猜錯，否則保持自動偵測即可。",
   "privacy.translateToEnglish": "轉錄時同步譯成英文",
   "privacy.translateHint":

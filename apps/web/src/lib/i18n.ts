@@ -122,6 +122,19 @@ export function current(): Locale {
   return active;
 }
 
+/// A list of things, in the active language's own list grammar.
+///
+/// APP-129. Three lists were joined with a hard-coded "、", so the English,
+/// German, Spanish and Portuguese interfaces read "English、简体中文、繁體中文".
+/// `common.listJoin` is not the answer either: it is a conjunction (" and ") for
+/// two items, and eight languages joined with it read "English and 简体中文 and
+/// 繁體中文 and ...". `Intl.ListFormat` already knows each language's rule --
+/// commas and a final "and" in English, 、 and 和 in Chinese, "und" in German --
+/// so it is asked rather than hand-formatted, the same as dates and numbers.
+export function listFormat(items: readonly string[]): string {
+  return new Intl.ListFormat(active.intl, { style: "long", type: "conjunction" }).format(items);
+}
+
 export function setLocale(code: LocaleCode): void {
   active = localeOf(code);
   document.documentElement.lang = active.intl;

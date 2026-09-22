@@ -149,7 +149,7 @@ export const pt: Catalogue = {
   "record.handoffDirect":
     "O som daquela aba já está escolhido. Nada é capturado até você apertar iniciar, e nada sai deste navegador depois disso.",
   "record.handoffPicker":
-    "O atalho para aquela aba expirou, então vão perguntar qual aba compartilhar. Marque “compartilhar áudio da aba”.",
+    "O Chrome não deixa um botão dentro de uma página captar o som de outra aba, então vão perguntar qual aba compartilhar. Escolha a aba da reunião e marque “compartilhar áudio da aba” — senão, só o seu microfone será gravado.",
   "record.agreeHeading": "Com o que você está concordando",
   "record.agreeNote":
     "Guardado palavra por palavra com esta gravação, para que mudar este texto depois não possa reescrever com o que você concordou agora.",
@@ -455,6 +455,7 @@ export const pt: Catalogue = {
     "Os dois idiomas são escutados, e cada trecho é transcrito naquele que está sendo falado de fato. Nomeá-los impede que a detecção escorregue para um terceiro.",
   "run.listeningForLanguage": "Escutando para saber o idioma",
   "run.rereading": "Relendo {seconds}s — o reconhecedor pulou esse trecho",
+  "run.transcribingAt": "Transcrevendo {done} de {total}",
   "privacy.languageHint":
     "O Whisper dá conta de 99. Deixe na detecção automática, a não ser que ele continue errando.",
   "privacy.translateToEnglish": "Traduzir para o inglês enquanto transcreve",

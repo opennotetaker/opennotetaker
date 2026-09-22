@@ -142,7 +142,7 @@ export const en = {
   "record.handoffDirect":
     "That tab's sound is already chosen. Nothing is captured until you press start, and nothing leaves this browser after you do.",
   "record.handoffPicker":
-    "The shortcut to that tab expired, so you will be asked which tab to share. Tick “share tab audio”.",
+    "Chrome does not let a button inside a web page pick up another tab's sound, so you will be asked which tab to share. Choose the meeting tab and tick “Share tab audio” — without it, only your microphone is recorded.",
   "record.agreeHeading": "What you are agreeing to",
   "record.agreeNote":
     "Stored word for word with this recording, so changing this text later cannot rewrite what you agreed to now.",
@@ -448,6 +448,7 @@ export const en = {
     "Both languages are listened for, and each stretch is transcribed in the one actually being spoken. Naming them stops detection wandering into a third.",
   "run.listeningForLanguage": "Listening for the language",
   "run.rereading": "Reading {seconds}s again — the recogniser skipped it",
+  "run.transcribingAt": "Transcribing {done} of {total}",
   "privacy.languageHint":
     "Whisper handles 99. Leave it on detect unless it keeps guessing wrong.",
   "privacy.translateToEnglish": "Translate into English while transcribing",

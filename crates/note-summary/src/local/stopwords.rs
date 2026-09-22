@@ -92,6 +92,8 @@ const STOPWORDS: &[&str] = &[
     "every",
     "everything",
     "exactly",
+    "first",
+    "for",
     "from",
     "für",
     "gets",
@@ -134,6 +136,8 @@ const STOPWORDS: &[&str] = &[
     "kind",
     "know",
     "las",
+    "last",
+    "later",
     "les",
     "let",
     "like",
@@ -157,6 +161,7 @@ const STOPWORDS: &[&str] = &[
     "must",
     "my",
     "myself",
+    "next",
     "nicht",
     "not",
     "nothing",
@@ -193,6 +198,7 @@ const STOPWORDS: &[&str] = &[
     "say",
     "saying",
     "says",
+    "second",
     "see",
     "seen",
     "sein",
@@ -204,6 +210,7 @@ const STOPWORDS: &[&str] = &[
     "some",
     "somebody",
     "something",
+    "soon",
     "sort",
     "still",
     "stuff",
@@ -229,6 +236,9 @@ const STOPWORDS: &[&str] = &[
     "though",
     "through",
     "thus",
+    "today",
+    "tomorrow",
+    "tonight",
     "too",
     "und",
     "under",
@@ -268,6 +278,7 @@ const STOPWORDS: &[&str] = &[
     "wouldn",
     "yeah",
     "yes",
+    "yesterday",
     "yet",
     "you",
     "your",
@@ -304,7 +315,9 @@ mod tests {
     /// "staging · let's · i'll · push".
     #[test]
     fn a_contraction_is_a_stopword_when_the_word_it_is_built_from_is() {
-        for word in ["let's", "i'll", "we'll", "we're", "that's", "it's", "there's", "you're"] {
+        for word in [
+            "let's", "i'll", "we'll", "we're", "that's", "it's", "there's", "you're",
+        ] {
             assert!(is_stopword(word), "{word} should be a stopword");
         }
         // The curly apostrophe a transcriber actually emits, not just ASCII.

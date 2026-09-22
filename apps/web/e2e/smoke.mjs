@@ -236,6 +236,27 @@ check("a language name becomes the code Whisper knows", languageResult.code === 
 check("and the code is shown back in the reader's script", languageResult.named === "中文");
 check("window counting matches the pipeline's own loop", languageResult.windows === 1, String(languageResult.windows));
 
+// APP-126: the download bar ran 100% -> 58% -> 41% -> 100%, because each file
+// that started grew the total. The events below are the order transformers.js
+// sends them in for whisper-base.
+const progressResult = await page.evaluate(() => {
+  const { DownloadProgress, clock } = window.__test.transcribe;
+  const bar = new DownloadProgress();
+  const shown = [
+    bar.update("config.json", 2_000, 2_000),
+    bar.update("onnx/encoder_model.onnx", 40e6, 82e6),
+    bar.update("onnx/decoder_model_merged.onnx", 1e6, 208e6),
+    bar.update("onnx/encoder_model.onnx", 82e6, 82e6),
+    bar.update("onnx/decoder_model_merged.onnx", 208e6, 208e6),
+  ];
+  return { shown, clocks: [clock(40 * 16000), clock(82.7 * 16000), clock(3725 * 16000)] };
+});
+const seen = progressResult.shown.filter((x) => x !== null);
+check("the download bar ignores the config file", progressResult.shown[0] === null, JSON.stringify(progressResult.shown));
+check("…never runs backwards", seen.every((x, i) => i === 0 || x >= seen[i - 1]), JSON.stringify(seen));
+check("…and ends at 100%", seen[seen.length - 1] === 1, JSON.stringify(seen));
+check("positions read as a clock", progressResult.clocks.join(" ") === "0:40 1:22 1:02:05", progressResult.clocks.join(" "));
+
 // --- the store, and retention ----------------------------------------------
 
 const storeResult = await page.evaluate(async () => {
@@ -873,6 +894,73 @@ check(
   check("the free summariser reports its languages", languages.includes("简体中文"), String(languages));
   check("…including Traditional Chinese", languages.includes("繁體中文"));
   check("…and Japanese", languages.includes("日本語"));
+}
+
+// APP-129. Lists are joined in the reader's own list grammar, never with a
+// hard-coded Chinese 、. The privacy page's redaction hint is one of the three
+// that shipped it; checked in the languages the report named, plus Chinese,
+// where the 、 is right.
+{
+  const joins = {};
+  for (const code of ["en", "de", "es", "pt", "zh-Hans"]) {
+    await chooseLanguage(page, code);
+    await page.goto(BASE + "#/privacy");
+    await page.waitForTimeout(400);
+    joins[code] = await page.evaluate(() => document.querySelector("main")?.innerText ?? "");
+  }
+  for (const code of ["en", "de", "es", "pt"]) {
+    check(`${code}: no Chinese 、 in a list`, !joins[code].includes("、"),
+      (joins[code].match(/.{0,40}、.{0,40}/) ?? [""])[0]);
+  }
+  check("en: the redaction list reads as English", /email addresses, phone numbers/i.test(joins.en),
+    (joins.en.match(/Replaces.{0,90}/) ?? [""])[0]);
+  check("zh-Hans: Chinese still uses its own 、", joins["zh-Hans"].includes("、"));
+  await chooseLanguage(page, "en");
+}
+
+// APP-128 and APP-130, through the export card and the file it actually saves.
+// "Include who said what" must reach subtitles too, and a CSV must open in
+// Windows Excel without turning Chinese into mojibake, which needs a BOM.
+{
+  await page.evaluate(async () => {
+    const { app, engine } = window.__test;
+    const transcript = engine.fromChunks([
+      { start_ms: 0, end_ms: 2500, text: "你今天把上线清单发到群里。" },
+      { start_ms: 2500, end_ms: 5000, text: "好的，我周五之前发给你。" },
+    ], "chinese", true);
+    transcript.speakers = [
+      { id: "S0", label: "Speaker 1", named: false },
+      { id: "S1", label: "Speaker 2", named: false },
+    ];
+    transcript.segments[0].speaker = "S0";
+    transcript.segments[1].speaker = "S1";
+    await app.save({ id: "smoke-export", title: "上线清单", created: Date.now(), updated: Date.now(),
+      transcript, summary: engine.summariseLocal(transcript), aiSummary: null, consent: null,
+      audio: null, audioType: null, durationMs: 5000, language: "zh" });
+  });
+  await page.goto(BASE + "#/note/smoke-export");
+  await page.waitForTimeout(800);
+  const card = page.locator("div.card", { hasText: "Include who said what" }).first();
+  const speakers = card.locator("label.check", { hasText: "Include who said what" }).locator("input");
+  const saved = async (format, withSpeakers) => {
+    await card.locator("select").first().selectOption(format);
+    if ((await speakers.isChecked()) !== withSpeakers) await speakers.click();
+    const download = page.waitForEvent("download");
+    await card.getByRole("button", { name: "Download" }).click();
+    const { readFile } = await import("node:fs/promises");
+    return readFile(await (await download).path());
+  };
+  for (const format of ["srt", "vtt"]) {
+    const off = (await saved(format, false)).toString("utf8");
+    check(`${format}: no speaker prefix when "who said what" is off`, !/Speaker \d: /.test(off), off.slice(0, 120));
+    const on = (await saved(format, true)).toString("utf8");
+    check(`${format}: the prefix is kept when it is on`, /Speaker 1: /.test(on), on.slice(0, 120));
+  }
+  const csv = await saved("csv", true);
+  check("csv: starts with a UTF-8 byte-order mark", csv[0] === 0xef && csv[1] === 0xbb && csv[2] === 0xbf,
+    [...csv.subarray(0, 3)].map((x) => x.toString(16)).join(" "));
+  check("csv: exactly one, not stacked", !(csv[3] === 0xef && csv[4] === 0xbb));
+  await page.evaluate(() => window.__test.app.remove("smoke-export"));
 }
 
 // A Chinese transcript must find its actions, and export under Chinese headings.
