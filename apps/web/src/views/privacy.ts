@@ -12,7 +12,7 @@
 
 import * as engine from "../engine";
 import { el, mount } from "../lib/dom";
-import { current, LOCALES, setLocale, t, type LocaleCode, listFormat } from "../lib/i18n";
+import { choose, current, LOCALES, t, type LocaleCode, listFormat } from "../lib/i18n";
 import { AUTH_URL, API_URL } from "../lib/account";
 import { LANGUAGES, MODELS } from "../lib/transcribe";
 import type { App } from "../main";
@@ -188,8 +188,7 @@ function languageCard(app: App): Node {
     {
       style: "width:auto",
       onchange: (event: Event) => {
-        setLocale((event.target as HTMLSelectElement).value as LocaleCode);
-        app.render();
+        if (!choose((event.target as HTMLSelectElement).value as LocaleCode)) app.render();
       },
     },
     ...LOCALES.map((locale) =>

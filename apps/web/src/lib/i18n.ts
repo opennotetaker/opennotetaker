@@ -79,6 +79,79 @@ export const LOCALES: Locale[] = [
 
 const STORAGE_KEY = "opennotetaker.locale";
 
+/// The language the served page declares, read once, before anything sets it.
+///
+/// `setLocale` overwrites `<html lang>`, so this has to be captured at module
+/// load or it reads back whatever the app last chose.
+const DECLARED = typeof document === "undefined" ? "" : document.documentElement.lang.trim();
+
+/// The other languages this same page is published in, from its `alternate`
+/// links.
+///
+/// The site publishes a real page per language -- `/zh-Hans.html` and the rest
+/// -- each with its marketing copy already translated, and the app runs inside
+/// that page. Two translation systems on one document: the page's, and the
+/// app's own catalogues. They disagreed. The app picked its language from
+/// `localStorage` or the browser and re-rendered its half, so a Chinese page
+/// came back with an English top bar and an English hero inside Chinese
+/// marketing copy, under `<html lang="en">` (APP-150).
+///
+/// So on that site the URL is the choice: the page decides what the app
+/// speaks, and the app's own picker goes to that language's page. A page with
+/// no alternates -- the bare app in development, the copy inside the extension
+/// -- has no URL per language, and keeps choosing for itself as before.
+const ALTERNATES = new Map<LocaleCode, string>();
+if (typeof document !== "undefined") {
+  for (const link of document.querySelectorAll<HTMLLinkElement>("link[rel=alternate][hreflang]")) {
+    const code = codeFor(link.getAttribute("hreflang") ?? "");
+    if (!code) continue;
+    try {
+      ALTERNATES.set(code, new URL(link.href, location.href).href);
+    } catch {
+      // A malformed href in the page's head is not worth failing the app over.
+    }
+  }
+}
+
+/// A locale by its BCP-47 tag, however the page spells it.
+function codeFor(tag: string): LocaleCode | null {
+  const lower = tag.trim().toLowerCase();
+  if (!lower) return null;
+  const match = LOCALES.find(
+    (locale) => locale.code.toLowerCase() === lower || locale.intl.toLowerCase() === lower,
+  );
+  return match?.code ?? null;
+}
+
+/// The language of the page that was served, when this app is inside one of
+/// the site's own translated pages.
+export function pageLocale(): LocaleCode | null {
+  return ALTERNATES.size > 0 ? codeFor(DECLARED) : null;
+}
+
+/// Choose a language, and go to that language's page where there is one.
+///
+/// Returns true when it is navigating, so the caller does not bother
+/// re-rendering a document that is about to be replaced.
+export function choose(code: LocaleCode): boolean {
+  setLocale(code);
+  const alternate = ALTERNATES.get(code);
+  if (!alternate) return false;
+  // The path, on the host we are actually on. The links are published
+  // absolute, and a preview or a developer's laptop serves the same composed
+  // site from another address: following the href itself would send the reader
+  // to production mid-session, while the path is the same everywhere the site
+  // is served.
+  const target = new URL(new URL(alternate).pathname, location.origin);
+  // The screen the person is on, and anything they were carrying, survive the
+  // change of language: `#/note/abc` stays `#/note/abc`.
+  target.search = location.search;
+  target.hash = location.hash;
+  if (target.href === location.href) return false;
+  location.assign(target.href);
+  return true;
+}
+
 let active: Locale = LOCALES[0]!;
 
 /// Pick a locale from what the browser says, before any stored preference.
@@ -147,8 +220,11 @@ export function setLocale(code: LocaleCode): void {
   }
 }
 
-/// The stored choice, else what the browser asks for.
+/// The page's own language, else the stored choice, else what the browser asks
+/// for. See `ALTERNATES` for why the page comes first.
 export function initialLocale(): LocaleCode {
+  const page = pageLocale();
+  if (page) return page;
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored && LOCALES.some((l) => l.code === stored)) return stored as LocaleCode;

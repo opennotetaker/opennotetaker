@@ -75,6 +75,7 @@ const SAME_AS_ENGLISH_OK = new Set([
   "common.listJoin",   // " and " is genuinely German's join too
   "record.pause",      // "Pause" is the German word, not a missed string
   "privacy.host",      // and so is "Host", which German IT uses unchanged
+  "site.faq",          // "FAQ" in German, as the site's own German page has it
 ]);
 
 for (const file of files) {

@@ -11,7 +11,7 @@ import "./styles.css";
 import * as engine from "./engine";
 import { el, mount } from "./lib/dom";
 import { connect as connectDetector, type Handoff, onHandoff } from "./lib/ext-bridge";
-import { current, initialLocale, LOCALES, setLocale, t } from "./lib/i18n";
+import { choose, current, initialLocale, LOCALES, setLocale, t } from "./lib/i18n";
 import { Recorder } from "./lib/recorder";
 import {
   DEFAULT_SETTINGS,
@@ -293,10 +293,12 @@ function wordmark(): Node {
  * treats `#/…` as a route, so clicking one scrolls the page and leaves the
  * landing route — and this bar — in place.
  *
- * They are not translated, and deliberately: the copy they point at is English
- * static markup in `index.html`. A Chinese tab scrolling to an English heading
- * is worse than an English tab doing it. The language control is still here,
- * because it sets the language of the app below.
+ * The labels follow the page, because the copy they point at does. The site
+ * publishes a page per language and each one's headings are translated, so on
+ * `/zh-Hans.html` these read 功能 and 价格 — the words that page's own footer
+ * already uses. They were left in English deliberately once, back when every
+ * page was English and a Chinese label would have scrolled to an English
+ * heading; on a Chinese page it is the English label that lies (APP-150).
  */
 function siteBar(app: App): Node {
   const anchor = (href: string, label: string) => el("a", { href }, label);
@@ -308,11 +310,11 @@ function siteBar(app: App): Node {
       wordmark(),
       el(
         "nav.tabs",
-        anchor("#features", "Features"),
-        anchor("#how", "How it works"),
-        anchor("#privacy", "Privacy"),
-        anchor("#pricing", "Pricing"),
-        anchor("#faq", "FAQ"),
+        anchor("#features", t("site.features")),
+        anchor("#how", t("site.how")),
+        anchor("#privacy", t("nav.privacy")),
+        anchor("#pricing", t("site.pricing")),
+        anchor("#faq", t("site.faq")),
       ),
       el(
         "div.header-actions",
@@ -422,8 +424,7 @@ function languagePicker(app: App): Node {
             lang: locale.intl,
             ...(on ? { "data-on": "" } : {}),
             onclick: () => {
-              setLocale(locale.code);
-              app.render();
+              if (!choose(locale.code)) app.render();
             },
           },
           locale.label,

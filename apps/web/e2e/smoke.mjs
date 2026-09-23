@@ -72,8 +72,23 @@ async function chooseLanguage(page, code) {
   const button = page.locator(".lang__button");
   if ((await button.getAttribute("aria-expanded")) !== "true") await button.click();
   await page.locator(`.lang__item[lang="${code}"]`).click();
-  await page.waitForTimeout(250);
+  // On the published site each language is its own page, so this is a
+  // navigation, not a re-render (APP-150). Wait for the language to be in
+  // force either way rather than for a fixed slice of time.
+  await page.waitForFunction(
+    (want) => document.documentElement.lang === want && !!window.__test,
+    code,
+    { timeout: 20_000 },
+  );
+  await page.waitForTimeout(150);
 }
+
+/// The same screen, on whichever language's page the browser is on.
+///
+/// Each language is its own page now (APP-150), so `BASE + "#/record"` is the
+/// English one by definition: after choosing a language, ask for the screen
+/// relative to where that left us.
+const here = (page, hash) => page.url().split("#")[0] + hash;
 
 const failures = [];
 const check = (name, condition, detail = "") => {
@@ -234,6 +249,60 @@ check(
 check("decoder debris never reaches the transcript", languageResult.cleaned === "你好 世界", languageResult.cleaned);
 check("a language name becomes the code Whisper knows", languageResult.code === "zh");
 check("and the code is shown back in the reader's script", languageResult.named === "中文");
+// APP-150: the site publishes a page per language and the app runs inside it,
+// so one document has two translation systems in it. They disagreed: the app
+// chose from the browser or localStorage and re-rendered its half, which put
+// an English top bar and an English hero inside a Chinese page — and set
+// <html lang> to whichever the app had picked. The page decides now.
+{
+  const alternates = await page.evaluate(
+    () => !!document.querySelector("link[rel=alternate][hreflang]"),
+  );
+  if (!alternates) {
+    console.log("  --  language-per-page checks skipped: no alternates (bare app)");
+  } else {
+    const chinese = await page.goto(BASE + "zh-Hans.html").catch(() => null);
+    if (!chinese || chinese.status() !== 200) {
+      console.log("  --  the Chinese page is not in this build; skipped");
+    } else {
+      await page.waitForTimeout(600);
+      const zh = await page.evaluate(() => ({
+        lang: document.documentElement.lang,
+        nav: document.querySelector("#nav")?.innerText.replace(/\s+/g, " ").trim() ?? "",
+        english: ["Nobody joins your call", "What it does", "How it works"].filter((s) =>
+          document.body.innerText.includes(s),
+        ),
+        stored: (() => {
+          try {
+            return localStorage.getItem("opennotetaker.locale");
+          } catch {
+            return null;
+          }
+        })(),
+      }));
+      check("the Chinese page says it is Chinese", zh.lang === "zh-Hans", zh.lang);
+      check("…its top bar is Chinese too", /功能|录制会议/.test(zh.nav) && !/Features|Record a meeting/.test(zh.nav), zh.nav.slice(0, 80));
+      check("…and no English copy is left on it", zh.english.length === 0, zh.english.join(" | "));
+      check("…the app took the page's language", zh.stored === "zh-Hans", String(zh.stored));
+    }
+
+    // The reporter's own case, the other way round: a Chinese browser on the
+    // English page. Half-translating it is the bug, not the fix.
+    const zhBrowser = await browser.newContext({ locale: "zh-CN" });
+    const zhPage = await zhBrowser.newPage();
+    await zhPage.goto(BASE);
+    await zhPage.waitForTimeout(600);
+    const en = await zhPage.evaluate(() => ({
+      lang: document.documentElement.lang,
+      nav: document.querySelector("#nav")?.innerText.replace(/\s+/g, " ").trim() ?? "",
+    }));
+    check("a Chinese browser does not half-translate the English page", en.lang === "en" && !/录制|功能|记录库/.test(en.nav), `${en.lang} — ${en.nav.slice(0, 60)}`);
+    await zhBrowser.close();
+    await page.goto(BASE);
+    await page.waitForTimeout(400);
+  }
+}
+
 check("window counting matches the pipeline's own loop", languageResult.windows === 1, String(languageResult.windows));
 
 // APP-126: the download bar ran 100% -> 58% -> 41% -> 100%, because each file
@@ -915,7 +984,7 @@ check(
 
   // The consent screen is the one place the words have to be right, so it is
   // checked in the translated locale rather than only in English.
-  await page.goto(BASE + "#/record");
+  await page.goto(here(page, "#/record"));
   await page.waitForTimeout(300);
   const consent = (await page.locator("blockquote").first().textContent()) ?? "";
   check("the consent script is translated too", consent.includes("錄下來"), consent);
@@ -942,7 +1011,7 @@ check(
   const joins = {};
   for (const code of ["en", "de", "es", "pt", "zh-Hans"]) {
     await chooseLanguage(page, code);
-    await page.goto(BASE + "#/privacy");
+    await page.goto(here(page, "#/privacy"));
     await page.waitForTimeout(400);
     joins[code] = await page.evaluate(() => document.querySelector("main")?.innerText ?? "");
   }
