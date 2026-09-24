@@ -1,0 +1,50 @@
+{
+  "name": {
+    "message": "OpenNoteTaker — detector de reuniões"
+  },
+  "description": {
+    "message": "Percebe quando você está em uma reunião do Google Meet, Zoom, Teams ou VooV e oferece gravá-la no OpenNoteTaker. Nenhum áudio sai da sua máquina."
+  },
+  "promptTitle": {
+    "message": "Você está em uma reunião do $PLATFORM$",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Google Meet"
+      }
+    }
+  },
+  "promptBody": {
+    "message": "Gravar e transcrever no OpenNoteTaker? Nada é enviado, e nenhum bot entra na chamada."
+  },
+  "promptRecord": {
+    "message": "Gravar esta reunião"
+  },
+  "promptLater": {
+    "message": "Agora não"
+  },
+  "promptNever": {
+    "message": "Nunca perguntar em $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "meet.google.com"
+      }
+    }
+  },
+  "popupHeading": {
+    "message": "Reuniões abertas agora"
+  },
+  "popupEmpty": {
+    "message": "Nenhuma aba de reunião aberta. Abra uma chamada do Google Meet, Zoom, Teams ou VooV e esta lista se preenche."
+  },
+  "popupRecord": {
+    "message": "Gravar"
+  },
+  "popupSave": {
+    "message": "Salvar"
+  },
+  "popupSaved": {
+    "message": "Salvo"
+  }
+}

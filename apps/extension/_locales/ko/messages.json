@@ -1,0 +1,50 @@
+{
+  "name": {
+    "message": "OpenNoteTaker — 회의 감지"
+  },
+  "description": {
+    "message": "Google Meet, Zoom, Teams, VooV 회의에 참여 중인 것을 알아차리고 OpenNoteTaker로 녹음할지 물어봅니다. 오디오는 기기를 벗어나지 않습니다."
+  },
+  "promptTitle": {
+    "message": "$PLATFORM$ 회의 중입니다",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Google Meet"
+      }
+    }
+  },
+  "promptBody": {
+    "message": "OpenNoteTaker에서 녹음하고 받아쓸까요? 업로드되지 않으며 봇도 참여하지 않습니다."
+  },
+  "promptRecord": {
+    "message": "이 회의 녹음"
+  },
+  "promptLater": {
+    "message": "나중에"
+  },
+  "promptNever": {
+    "message": "$HOST$에서 다시 묻지 않기",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "meet.google.com"
+      }
+    }
+  },
+  "popupHeading": {
+    "message": "지금 열려 있는 회의"
+  },
+  "popupEmpty": {
+    "message": "열려 있는 회의 탭이 없습니다. Google Meet, Zoom, Teams, VooV 통화를 열면 여기에 나타납니다."
+  },
+  "popupRecord": {
+    "message": "녹음"
+  },
+  "popupSave": {
+    "message": "저장"
+  },
+  "popupSaved": {
+    "message": "저장됨"
+  }
+}

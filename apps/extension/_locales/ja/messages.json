@@ -1,0 +1,50 @@
+{
+  "name": {
+    "message": "OpenNoteTaker — 会議の検出"
+  },
+  "description": {
+    "message": "Google Meet、Zoom、Teams、VooV の会議に参加していることを検出し、OpenNoteTaker での録音を提案します。音声が端末から出ることはありません。"
+  },
+  "promptTitle": {
+    "message": "$PLATFORM$ の会議中です",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Google Meet"
+      }
+    }
+  },
+  "promptBody": {
+    "message": "OpenNoteTaker で録音して文字起こししますか？ アップロードはされず、ボットも参加しません。"
+  },
+  "promptRecord": {
+    "message": "この会議を録音"
+  },
+  "promptLater": {
+    "message": "今はしない"
+  },
+  "promptNever": {
+    "message": "$HOST$ では今後たずねない",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "meet.google.com"
+      }
+    }
+  },
+  "popupHeading": {
+    "message": "いま開いている会議"
+  },
+  "popupEmpty": {
+    "message": "会議のタブがありません。Google Meet、Zoom、Teams、VooV の通話を開くと、ここに出てきます。"
+  },
+  "popupRecord": {
+    "message": "録音"
+  },
+  "popupSave": {
+    "message": "保存"
+  },
+  "popupSaved": {
+    "message": "保存しました"
+  }
+}

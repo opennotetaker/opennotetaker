@@ -6,7 +6,7 @@
   "description": "OpenNoteTaker meeting detector: notices a Meet, Zoom, Teams or VooV call and offers to record it locally.",
   "type": "module",
   "scripts": {
-    "test": "node --test test/platforms.test.mjs test/leave.test.mjs",
+    "test": "node --test test/platforms.test.mjs test/leave.test.mjs test/locales.test.mjs",
     "test:e2e": "node test/detector-e2e.mjs"
   },
   "devDependencies": {

@@ -1,0 +1,50 @@
+{
+  "name": {
+    "message": "OpenNoteTaker — Besprechungserkennung"
+  },
+  "description": {
+    "message": "Merkt, wenn Sie in einer Besprechung in Google Meet, Zoom, Teams oder VooV sind, und bietet an, sie in OpenNoteTaker aufzuzeichnen. Kein Ton verlässt Ihren Rechner."
+  },
+  "promptTitle": {
+    "message": "Sie sind in einer $PLATFORM$-Besprechung",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Google Meet"
+      }
+    }
+  },
+  "promptBody": {
+    "message": "In OpenNoteTaker aufzeichnen und transkribieren? Nichts wird hochgeladen, und kein Bot tritt der Besprechung bei."
+  },
+  "promptRecord": {
+    "message": "Diese Besprechung aufzeichnen"
+  },
+  "promptLater": {
+    "message": "Jetzt nicht"
+  },
+  "promptNever": {
+    "message": "Auf $HOST$ nie fragen",
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "meet.google.com"
+      }
+    }
+  },
+  "popupHeading": {
+    "message": "Gerade geöffnete Besprechungen"
+  },
+  "popupEmpty": {
+    "message": "Kein Besprechungstab ist offen. Öffnen Sie eine Besprechung in Google Meet, Zoom, Teams oder VooV, und diese Liste füllt sich."
+  },
+  "popupRecord": {
+    "message": "Aufzeichnen"
+  },
+  "popupSave": {
+    "message": "Speichern"
+  },
+  "popupSaved": {
+    "message": "Gespeichert"
+  }
+}
