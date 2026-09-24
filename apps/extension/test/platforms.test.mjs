@@ -24,7 +24,7 @@ const ROOMS = [
   ["https://acme.zoom.us/j/91234567890", "zoom", "Zoom"],
   ["https://app.zoom.us/wc/91234567890/start", "zoom", "Zoom"],
   ["https://us02web.zoom.us/wc/join/91234567890", "zoom", "Zoom"],
-  ["https://acme.zoom.us/my/darius", "zoom", "Zoom"],
+  ["https://acme.zoom.us/my/maintainer", "zoom", "Zoom"],
   ["https://app.zoom.com/wc/91234567890/join", "zoom", "Zoom"],
   [
     "https://teams.microsoft.com/l/meetup-join/19%3ameeting_abc%40thread.v2/0?context=%7b%7d",
