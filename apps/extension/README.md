@@ -11,9 +11,15 @@ smallest one that does the job.
 
 ## What it does, exactly
 
-1. Watches the URL of tabs on the four meeting platforms. On Teams, where the
-   URL stops changing once you are in a call, it also watches the page for a
-   leave-the-call button.
+1. Watches the URL of tabs on the four meeting platforms. Where the URL stops
+   changing once you are in a call -- Teams for a signed-in user, VooV's web
+   client -- it also watches the page for a leave-the-call button, in the
+   languages those interfaces are shipped in (`src/leave.js`). Their
+   interface follows the user's own language, not this extension's, so a
+   guest joining a German meeting was invisible to an English word list
+   (APP-165). A Teams invitation link is caught by its address instead, which
+   reads the same in every language; the prompt then appears on the pre-join
+   screen rather than once you are in.
 2. Draws a prompt in the corner of the meeting: **record this meeting?**
 3. If you accept, opens OpenNoteTaker and tells it which meeting it came
    from. When you press start, Chrome asks once which tab to share: pick the

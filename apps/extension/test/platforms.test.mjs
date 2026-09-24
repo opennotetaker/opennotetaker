@@ -34,6 +34,19 @@ const ROOMS = [
   ["https://teams.live.com/meet/9312345678901", "teams", "Microsoft Teams"],
   ["https://teams.microsoft.com/v2/?meetingjoin=true", "teams", "Microsoft Teams"],
   ["https://teams.microsoft.com/v2/#/pre-join-calling/19:meeting_abc", "teams", "Microsoft Teams"],
+  // The guest flow an invitation link lands on, which stays put from the
+  // pre-join screen to the end of the call. Reading the page instead meant
+  // reading the leave button, and that button speaks the user's language
+  // rather than ours (APP-165).
+  [
+    "https://teams.microsoft.com/light-meetings/launch?p=abc&anon=true&launchAgent=join_launcher_web&lightExperience=true",
+    "teams",
+    "Microsoft Teams",
+  ],
+  ["https://teams.microsoft.com/light-meetings/launch?p=abc", "teams", "Microsoft Teams"],
+  // An invitation id on teams.microsoft.com is not all digits.
+  ["https://teams.microsoft.com/meet/4917283746?p=Kf2p1", "teams", "Microsoft Teams"],
+  ["https://teams.microsoft.com/meet/9Xk2Lq7?p=Kf2p1", "teams", "Microsoft Teams"],
   ["https://meeting.tencent.com/wc/?meeting_code=123456789", "voov", "VooV Meeting"],
   ["https://meeting.tencent.com/dm/AbCdEf123456", "voov", "VooV Meeting"],
   ["https://w.voovmeeting.com/wc/?meeting_code=123456789", "voov", "VooV Meeting"],

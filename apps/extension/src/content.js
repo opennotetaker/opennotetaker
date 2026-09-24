@@ -30,9 +30,6 @@
 // languages this product ships in -- an element that exists in every one of
 // these products, in every layout they have shipped, and in no lobby.
 
-const LEAVE =
-  /\b(leave|hang ?up|end call|end meeting|disconnect)\b|離開|离开|挂断|掛斷|结束会议|結束會議|退出会议|退出會議/i;
-
 let shown = false;
 let observer = null;
 
@@ -82,11 +79,16 @@ function watchForCall(message) {
 }
 
 function inCall() {
+  const leaving = self.opennotetakerLooksLikeLeaving;
   for (const node of document.querySelectorAll("button, [role='button'], a[role='button']")) {
-    const name = `${node.getAttribute("aria-label") ?? ""} ${node.getAttribute("title") ?? ""} ${
-      node.getAttribute("data-tid") ?? ""
-    } ${node.textContent?.slice(0, 40) ?? ""}`;
-    if (LEAVE.test(name)) return true;
+    // Each name on its own — see `looksLikeLeaving` in leave.js for why.
+    const names = [
+      node.getAttribute("aria-label"),
+      node.getAttribute("title"),
+      node.getAttribute("data-tid"),
+      node.textContent?.slice(0, 40),
+    ];
+    if (names.some((name) => leaving(name))) return true;
   }
   return false;
 }

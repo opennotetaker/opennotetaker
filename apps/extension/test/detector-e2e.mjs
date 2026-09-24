@@ -180,6 +180,79 @@ try {
   check("recording started", /Name it now, or later/.test(recording), recording.slice(0, 200));
   check("…with no warning about the picker", !/expired|shortcut/i.test(recording), recording.slice(0, 300));
 
+  // APP-165. Teams is the one platform whose own interface language follows
+  // the user, not us, and the detector was reading English and Chinese words
+  // off the leave button. A German guest joining from an invitation got no
+  // prompt at all: the address stops at /light-meetings/launch, which no URL
+  // rule matched, so it fell to the page — where the button says "Verlassen".
+  //
+  // The attributes below are the ones the reporter measured on the real page:
+  // no aria-label, no data-tid, the word only in `title` and the text.
+  const german = await context.newPage();
+  await german.route("**/*", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: `<!doctype html><html lang="de"><title>Besprechung | Microsoft Teams</title>
+        <body><h1>Wöchentliche Planung</h1>
+        <button title="Verlassen">Verlassen</button>`,
+    }),
+  );
+  await german.goto(
+    "https://teams.microsoft.com/light-meetings/launch?p=abc&anon=true" +
+      "&launchAgent=join_launcher_web&lightExperience=true",
+  );
+  const germanPrompt = german.locator("#opennotetaker-prompt .card");
+  await germanPrompt.waitFor({ timeout: 20_000 }).catch(() => {});
+  check(
+    "a German Teams meeting is noticed",
+    (await germanPrompt.count()) === 1,
+    german.url(),
+  );
+  check(
+    "…and it is named as Teams",
+    ((await germanPrompt.locator(".title").textContent().catch(() => "")) ?? "").includes(
+      "Microsoft Teams",
+    ),
+  );
+
+  // The other half of that: German Teams chat has a "Team verlassen" button —
+  // leaving a *team*, not a call. Matching "verlassen" anywhere in a name
+  // would prompt on chat, which is the failure the word list exists to avoid.
+  const chat = await context.newPage();
+  await chat.route("**/*", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: `<!doctype html><html lang="de"><title>Chat | Microsoft Teams</title>
+        <body><h1>Chat</h1><button title="Team verlassen">Team verlassen</button>
+        <button aria-label="Besprechung planen">Besprechung planen</button>`,
+    }),
+  );
+  await chat.goto("https://teams.microsoft.com/v2/#/conversations/19:meeting_abc");
+  await chat.waitForTimeout(6_000);
+  check(
+    "leaving a team is not leaving a call",
+    (await chat.locator("#opennotetaker-prompt").count()) === 0,
+  );
+
+  // The signed-in client keeps `/v2/` in the address bar through a whole
+  // call, so there the page is the only witness. German again: this is the
+  // half the word list has to carry, and the button is labelled exactly
+  // "Verlassen" — the case that must be told apart from "Team verlassen".
+  const v2 = await context.newPage();
+  await v2.route("**/*", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: `<!doctype html><html lang="de"><title>Microsoft Teams</title>
+        <body><h1>Wöchentliche Planung</h1>
+        <button aria-label="Stummschalten">Mikrofon</button>
+        <button title="Verlassen"></button>`,
+    }),
+  );
+  await v2.goto("https://teams.microsoft.com/v2/");
+  const v2Prompt = v2.locator("#opennotetaker-prompt .card");
+  await v2Prompt.waitFor({ timeout: 20_000 }).catch(() => {});
+  check("a German call in the signed-in client is noticed too", (await v2Prompt.count()) === 1);
+
   // "Never ask here" has to actually silence the site, or the prompt becomes
   // the pop-up it replaces.
   const second = await context.newPage();

@@ -74,8 +74,21 @@ const PLATFORMS = [
         // What the address bar becomes on the way into a call.
         url.searchParams.get("meetingjoin") === "true" ||
         /(^|#)\/(pre-join-calling|calling|meet)(\/|$)/.test(url.hash) ||
-        // A free Teams meeting link: teams.live.com/meet/<id>.
-        /^\/(meet|_#\/meet)\/\d+/.test(url.pathname)
+        // A free Teams meeting link: teams.live.com/meet/<id>. The id is
+        // digits on teams.live.com and a longer alphanumeric one on
+        // teams.microsoft.com, so this does not insist on digits.
+        /^\/(meet|_#\/meet)\/[^/]+/.test(url.pathname) ||
+        // The guest flow, which is where an invitation link lands anyone who
+        // is not signed in: /light-meetings/launch?... and it stays there
+        // through the pre-join screen, the lobby and the whole call.
+        //
+        // This matters more than one more URL shape. Teams' interface speaks
+        // the user's language, not ours, so the fallback below -- reading the
+        // leave button -- was looking for English and Chinese words on a
+        // German page and finding none (APP-165). A URL says the same thing
+        // in every language. The cost is that the prompt now appears on the
+        // pre-join screen, a step earlier than before.
+        url.pathname.startsWith("/light-meetings/")
       );
     },
     // Everything else on a Teams host: chat, the activity feed, and -- because
