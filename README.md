@@ -1,5 +1,7 @@
 # OpenNoteTaker
 
+**The open-source alternative to Otter.ai and Fireflies — no bot joins your call, and nothing is uploaded.** [opennotetaker.app](https://opennotetaker.app)
+
 **Meeting notes that never leave your machine.**
 
 Recording, transcription, speaker separation, summaries and every export
