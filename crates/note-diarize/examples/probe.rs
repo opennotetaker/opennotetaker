@@ -12,7 +12,9 @@ use note_diarize::{diarize, Options, SpeakerCount};
 
 fn main() {
     let mut args = std::env::args().skip(1);
-    let path = args.next().expect("usage: probe <raw f32le 16k mono> [speakers]");
+    let path = args
+        .next()
+        .expect("usage: probe <raw f32le 16k mono> [speakers]");
     let forced: Option<usize> = args.next().and_then(|a| a.parse().ok());
 
     let bytes = std::fs::read(&path).expect("read");
@@ -33,8 +35,16 @@ fn main() {
     // A transcriber cuts on pauses and also caps how long a line may run, so
     // do both -- otherwise continuous synthesised speech comes back as one
     // segment and there is nothing to cluster.
-    let pause_frames: usize = std::env::var("PAUSE_MS").ok().and_then(|v| v.parse().ok()).unwrap_or(120) / 10;
-    let max_frames: usize = std::env::var("MAX_S").ok().and_then(|v| v.parse().ok()).unwrap_or(6) * 100;
+    let pause_frames: usize = std::env::var("PAUSE_MS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(120)
+        / 10;
+    let max_frames: usize = std::env::var("MAX_S")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(6)
+        * 100;
 
     let mut segments = Vec::new();
     let mut start: Option<usize> = None;
@@ -42,7 +52,11 @@ fn main() {
     let cut = |segments: &mut Vec<Segment>, from: usize, to: usize| {
         if to > from {
             let n = segments.len();
-            segments.push(Segment::new(from as i64 * 10, to as i64 * 10, format!("line {n}")));
+            segments.push(Segment::new(
+                from as i64 * 10,
+                to as i64 * 10,
+                format!("line {n}"),
+            ));
         }
     };
     for (i, &v) in voiced.iter().enumerate() {
@@ -78,7 +92,13 @@ fn main() {
         let tree = note_diarize::cluster::build_with(&embeddings, note_diarize::divergence);
         let heights = tree.heights();
         println!("{} embeddings; merge heights (last 10):", embeddings.len());
-        let tail: Vec<String> = heights.iter().rev().take(10).rev().map(|h| format!("{h:.3}")).collect();
+        let tail: Vec<String> = heights
+            .iter()
+            .rev()
+            .take(10)
+            .rev()
+            .map(|h| format!("{h:.3}"))
+            .collect();
         println!("  {}", tail.join("  "));
         let ratios: Vec<String> = heights
             .windows(2)
@@ -94,8 +114,14 @@ fn main() {
     let mut transcript = Transcript::from_segments(Source::Recorded, segments);
     let options = Options {
         min_voiced_ms: min_voiced_ms(),
-        threshold: std::env::var("THRESHOLD").ok().and_then(|v| v.parse().ok()).unwrap_or(0.35),
-        max_speakers: std::env::var("MAX_SPEAKERS").ok().and_then(|v| v.parse().ok()).unwrap_or(8),
+        threshold: std::env::var("THRESHOLD")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0.35),
+        max_speakers: std::env::var("MAX_SPEAKERS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(8),
         speakers: match forced {
             Some(k) => SpeakerCount::Exactly(k),
             None => SpeakerCount::Auto,
@@ -115,5 +141,8 @@ fn main() {
 }
 
 fn min_voiced_ms() -> i64 {
-    std::env::var("MIN_VOICED_MS").ok().and_then(|v| v.parse().ok()).unwrap_or(400)
+    std::env::var("MIN_VOICED_MS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(400)
 }

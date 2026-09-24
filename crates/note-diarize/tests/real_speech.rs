@@ -86,7 +86,11 @@ fn segment_like_a_transcriber(samples: &[f32]) -> Transcript {
     let push = |segments: &mut Vec<Segment>, from: usize, to: usize| {
         if to > from {
             let n = segments.len();
-            segments.push(Segment::new(from as i64 * 10, to as i64 * 10, format!("line {n}")));
+            segments.push(Segment::new(
+                from as i64 * 10,
+                to as i64 * 10,
+                format!("line {n}"),
+            ));
         }
     };
 
@@ -117,7 +121,10 @@ fn segment_like_a_transcriber(samples: &[f32]) -> Transcript {
 }
 
 fn run(fixture: &str, options: &Options) -> (usize, Vec<String>) {
-    let samples = read_wav(&format!("{}/tests/fixtures/{fixture}", env!("CARGO_MANIFEST_DIR")));
+    let samples = read_wav(&format!(
+        "{}/tests/fixtures/{fixture}",
+        env!("CARGO_MANIFEST_DIR")
+    ));
     let mut transcript = segment_like_a_transcriber(&samples);
     assert!(
         transcript.segments.len() >= 4,
@@ -149,7 +156,11 @@ fn two_people_are_told_apart_without_being_counted_first() {
     // Samantha, Daniel, Samantha: the first and last turns are one person and
     // the middle one is not, so whatever the labels are called, the shape has
     // to come back.
-    assert_eq!(labels.first(), labels.last(), "the same voice got two speakers: {labels:?}");
+    assert_eq!(
+        labels.first(),
+        labels.last(),
+        "the same voice got two speakers: {labels:?}"
+    );
     assert!(
         labels.iter().any(|l| Some(l) != labels.first()),
         "two voices got one speaker: {labels:?}"
@@ -170,7 +181,10 @@ fn a_count_the_user_supplies_overrides_the_automatic_one() {
     for k in [1usize, 2, 4] {
         let (speakers, labels) = run(
             "three-speakers.wav",
-            &Options { speakers: SpeakerCount::Exactly(k), ..Default::default() },
+            &Options {
+                speakers: SpeakerCount::Exactly(k),
+                ..Default::default()
+            },
         );
         assert_eq!(speakers, k, "asked for {k}: {labels:?}");
     }

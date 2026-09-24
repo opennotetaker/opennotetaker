@@ -42,8 +42,8 @@ mod testing;
 use note_core::{Segment, Transcript};
 use serde::{Deserialize, Serialize};
 
-pub use cluster::{cluster, cosine_distance, Stop};
 pub use crate::divergence as gaussian_divergence;
+pub use cluster::{cluster, cosine_distance, Stop};
 pub use mfcc::{Analyser, Frame, SAMPLE_RATE};
 
 /// How the caller wants speakers decided.
@@ -189,7 +189,11 @@ pub fn diarize(transcript: &mut Transcript, samples: &[f32], options: &Options) 
 /// The same work `diarize` does, exposed so the `probe` example can look at
 /// the merge sequence without a second implementation of it drifting away
 /// from this one.
-pub fn embeddings_for(transcript: &Transcript, samples: &[f32], min_voiced_ms: i64) -> Vec<Fingerprint> {
+pub fn embeddings_for(
+    transcript: &Transcript,
+    samples: &[f32],
+    min_voiced_ms: i64,
+) -> Vec<Fingerprint> {
     let analyser = Analyser::new();
     let mut frames = analyser.analyse(samples);
     mfcc::normalise(&mut frames);

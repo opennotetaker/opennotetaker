@@ -128,7 +128,10 @@ pub fn build(embeddings: &[Vec<f32>]) -> Tree {
 /// Merge everything into one tree under an arbitrary distance.
 pub fn build_with<T>(items: &[T], distance: impl Fn(&T, &T) -> f32) -> Tree {
     let n = items.len();
-    let mut tree = Tree { n, merges: Vec::new() };
+    let mut tree = Tree {
+        n,
+        merges: Vec::new(),
+    };
     if n < 2 {
         return tree;
     }
