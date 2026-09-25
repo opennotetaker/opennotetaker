@@ -1,6 +1,6 @@
 {
   "name": "opennotetaker-extension",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "license": "MIT OR Apache-2.0",
   "description": "OpenNoteTaker meeting detector: notices a Meet, Zoom, Teams or VooV call and offers to record it locally.",

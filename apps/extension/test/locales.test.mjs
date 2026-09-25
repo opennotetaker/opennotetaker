@@ -103,3 +103,13 @@ test("the manifest takes its name and description from these", () => {
   assert.equal(manifest.default_locale, "en");
   assert.ok(locales.includes(manifest.default_locale));
 });
+
+test("the two files that carry a version agree on it", () => {
+  // The store reads the manifest and the release is named after package.json;
+  // shipping a build whose two halves disagree is a confusion that only shows
+  // up after submission.
+  const manifest = JSON.parse(readFileSync(join(here, "../manifest.json"), "utf8"));
+  const pkg = JSON.parse(readFileSync(join(here, "../package.json"), "utf8"));
+  assert.equal(manifest.version, pkg.version);
+  assert.match(manifest.version, /^\d+\.\d+\.\d+$/, "a store version is three numbers");
+});
