@@ -249,6 +249,23 @@ check(
 check("decoder debris never reaches the transcript", languageResult.cleaned === "你好 世界", languageResult.cleaned);
 check("a language name becomes the code Whisper knows", languageResult.code === "zh");
 check("and the code is shown back in the reader's script", languageResult.named === "中文");
+// APP-176: the footer's language row shares a class with the block of footer
+// columns above it, which is a five-column grid. As a lone grid item the nav
+// was pushed into the first column and its eight links fell onto three rows on
+// an ordinary desktop. One row is the whole point of a row of languages.
+{
+  await page.goto(BASE);
+  await page.waitForTimeout(400);
+  const rows = await page.evaluate(() => {
+    const links = [...document.querySelectorAll(".site-chrome .lang-row a")];
+    return {
+      links: links.length,
+      rows: new Set(links.map((a) => Math.round(a.getBoundingClientRect().top))).size,
+    };
+  });
+  check("the eight languages sit on one row in the footer", rows.links === 8 && rows.rows === 1, JSON.stringify(rows));
+}
+
 // APP-150: the site publishes a page per language and the app runs inside it,
 // so one document has two translation systems in it. They disagreed: the app
 // chose from the browser or localStorage and re-rendered its half, which put
