@@ -1,0 +1,8 @@
+{
+  "name": {
+    "message": "Nagrywanie spotkań i notatki AI dla Zoom, Meet, Teams | OpenNoteTaker"
+  },
+  "description": {
+    "message": "Gdy otworzysz rozmowę Zoom, Meet, Teams lub Tencent Meeting, OpenNoteTaker zaproponuje nagranie i transkrypcję lokalnym Whisper AI."
+  }
+}

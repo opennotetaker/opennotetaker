@@ -1,0 +1,8 @@
+{
+  "name": {
+    "message": "मीटिंग रिकॉर्डर और AI नोट्स - Zoom, Meet, Teams के लिए | OpenNoteTaker"
+  },
+  "description": {
+    "message": "Zoom, Meet, Teams या Tencent Meeting कॉल खोलते ही OpenNoteTaker लोकल Whisper AI से रिकॉर्ड और ट्रांसक्राइब करने का विकल्प देता है।"
+  }
+}

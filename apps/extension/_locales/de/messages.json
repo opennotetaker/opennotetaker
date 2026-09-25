@@ -1,9 +1,9 @@
 {
   "name": {
-    "message": "OpenNoteTaker — Besprechungserkennung"
+    "message": "Meeting-Rekorder & AI-Notizen für Zoom, Meet, Teams | OpenNoteTaker"
   },
   "description": {
-    "message": "Merkt, wenn Sie in einer Besprechung in Google Meet, Zoom, Teams oder VooV sind, und bietet an, sie in OpenNoteTaker aufzuzeichnen. Kein Ton verlässt Ihren Rechner."
+    "message": "Öffne ein Zoom-, Meet-, Teams- oder Tencent-Meeting und OpenNoteTaker bietet Aufnahme und Transkription mit lokaler Whisper-AI an."
   },
   "promptTitle": {
     "message": "Sie sind in einer $PLATFORM$-Besprechung",

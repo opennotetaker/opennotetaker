@@ -1,0 +1,8 @@
+{
+  "name": {
+    "message": "Perekam Rapat & Catatan AI untuk Zoom, Meet, Teams | OpenNoteTaker"
+  },
+  "description": {
+    "message": "Saat membuka rapat Zoom, Meet, Teams, atau Tencent Meeting, OpenNoteTaker menawarkan rekam dan transkrip dengan Whisper AI lokal."
+  }
+}

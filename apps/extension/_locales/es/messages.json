@@ -1,9 +1,9 @@
 {
   "name": {
-    "message": "OpenNoteTaker — detector de reuniones"
+    "message": "Grabadora de reuniones y notas IA para Zoom, Meet, Teams | OpenNoteTaker"
   },
   "description": {
-    "message": "Detecta cuando estás en una reunión de Google Meet, Zoom, Teams o VooV y te ofrece grabarla en OpenNoteTaker. Ningún audio sale de tu máquina."
+    "message": "Al abrir una llamada de Zoom, Meet, Teams o Tencent Meeting, OpenNoteTaker te ofrece grabarla y transcribirla con Whisper AI local."
   },
   "promptTitle": {
     "message": "Estás en una reunión de $PLATFORM$",

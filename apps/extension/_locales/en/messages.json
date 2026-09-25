@@ -1,24 +1,50 @@
 {
-  "name": { "message": "OpenNoteTaker — meeting detector" },
+  "name": {
+    "message": "Meeting Recorder & AI Notes for Zoom, Meet, Teams | OpenNoteTaker"
+  },
   "description": {
-    "message": "Notices when you are in a Google Meet, Zoom, Teams or VooV meeting and offers to record it in OpenNoteTaker. No audio ever leaves your machine."
+    "message": "Join a Zoom, Meet, Teams or Tencent Meeting call and OpenNoteTaker offers to record and transcribe it with on-device Whisper AI."
   },
   "promptTitle": {
     "message": "You are in a $PLATFORM$ meeting",
-    "placeholders": { "platform": { "content": "$1", "example": "Google Meet" } }
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Google Meet"
+      }
+    }
   },
   "promptBody": {
     "message": "Record and transcribe it in OpenNoteTaker? Nothing is uploaded, and no bot joins the call."
   },
-  "promptRecord": { "message": "Record this meeting" },
-  "promptLater": { "message": "Not now" },
+  "promptRecord": {
+    "message": "Record this meeting"
+  },
+  "promptLater": {
+    "message": "Not now"
+  },
   "promptNever": {
     "message": "Never ask on $HOST$",
-    "placeholders": { "host": { "content": "$1", "example": "meet.google.com" } }
+    "placeholders": {
+      "host": {
+        "content": "$1",
+        "example": "meet.google.com"
+      }
+    }
   },
-  "popupHeading": { "message": "Meetings open right now" },
-  "popupEmpty": { "message": "No meeting tab is open. Open a Google Meet, Zoom, Teams or VooV call and this list fills in." },
-  "popupRecord": { "message": "Record" },
-  "popupSave": { "message": "Save" },
-  "popupSaved": { "message": "Saved" }
+  "popupHeading": {
+    "message": "Meetings open right now"
+  },
+  "popupEmpty": {
+    "message": "No meeting tab is open. Open a Google Meet, Zoom, Teams or VooV call and this list fills in."
+  },
+  "popupRecord": {
+    "message": "Record"
+  },
+  "popupSave": {
+    "message": "Save"
+  },
+  "popupSaved": {
+    "message": "Saved"
+  }
 }

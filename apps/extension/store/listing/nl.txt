@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: nl) =====
+Vergadering transcriberen
+Sprekerlabels
+Whisper Transcriptie
+Spraak naar Tekst
+SRT Ondertitels Exporteren
+Gespreksverslag
+Transcriberen zonder Account
+
+===== OVERVIEW (CHROME) (locale: nl) =====
+Als je een online meeting opent, biedt OpenNoteTaker aan om die op te nemen, zodat je een volledig transcript krijgt zonder dat er een bot aan het gesprek deelneemt. Opnemen en transcriberen gebeurt in de OpenNoteTaker-webapp, en de audio blijft op je eigen computer.
+
+FUNCTIES
+
+• Werkt met Google Meet, Zoom, Microsoft Teams en Tencent Meeting (VooV) in de browser
+• Geen bot sluit zich aan bij het gesprek, en niemand anders hoeft iets te installeren
+• Duidelijk toestemmingsscherm. Er wordt niets opgenomen totdat je op Start drukt.
+• Neemt je microfoon en de audio van de meeting op
+• Whisper-transcriptie draait op je eigen apparaat
+• Open de pagina één keer online; zodra het model is gedownload, werkt de transcriptie ook offline
+• Sprekerlabels, een samenvatting op het apparaat en doorzoekbaar over alle meetings
+• Exporteer naar TXT, Markdown, SRT, VTT, CSV, HTML of JSON
+• Gratis opnemen, transcriberen en exporteren, geen account nodig
+
+PRIVACY
+
+Meeting-audio wordt op je eigen apparaat verwerkt en nooit geüpload. De extensie neemt niets op, leest de chat en inhoud van je meetings niet en heeft geen contact met een server. Ze gebruikt de webadressen van je tabbladen om te weten wanneer er een meetingpagina open is; bij Teams en Tencent Meeting kijkt ze ook of er een knop om het gesprek te verlaten is, zodat ze weet dat je deelneemt. Als je op ‘Record’ klikt, wordt de tabbladtitel als meetingnaam doorgegeven aan OpenNoteTaker.
+
+Optionele AI-notulen, vragen & antwoorden en vertaling vereisen een account en gebruiken credits.
+
+Website: https://opennotetaker.app/
+GitHub: https://github.com/opennotetaker/OpenNoteTaker
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: nl) =====
+Als je een online meeting opent, biedt OpenNoteTaker aan om die op te nemen, zodat je een volledig transcript krijgt zonder dat er een bot aan het gesprek deelneemt. Opnemen en transcriberen gebeurt in de OpenNoteTaker-webapp, en de audio blijft op je eigen computer.
+
+FUNCTIES
+
+• Werkt met Google Meet, Zoom, Microsoft Teams en Tencent Meeting (VooV) in de browser
+• Geen bot sluit zich aan bij het gesprek, en niemand anders hoeft iets te installeren
+• Duidelijk toestemmingsscherm. Er wordt niets opgenomen totdat je op Start drukt.
+• Neemt je microfoon en de audio van de meeting op
+• Whisper-transcriptie draait op je eigen apparaat
+• Open de pagina één keer online; zodra het model is gedownload, werkt de transcriptie ook offline
+• Sprekerlabels, een samenvatting op het apparaat en doorzoekbaar over alle meetings
+• Exporteer naar TXT, Markdown, SRT, VTT, CSV, HTML of JSON
+• Gratis opnemen, transcriberen en exporteren, geen account nodig
+
+PRIVACY
+
+Meeting-audio wordt op je eigen apparaat verwerkt en nooit geüpload. De extensie neemt niets op, leest de chat en inhoud van je meetings niet en heeft geen contact met een server. Ze gebruikt de webadressen van je tabbladen om te weten wanneer er een meetingpagina open is; bij Teams en Tencent Meeting kijkt ze ook of er een knop om het gesprek te verlaten is, zodat ze weet dat je deelneemt. Als je op ‘Record’ klikt, wordt de tabbladtitel als meetingnaam doorgegeven aan OpenNoteTaker.
+
+Optionele AI-notulen, vragen & antwoorden en vertaling vereisen een account en gebruiken credits.
+
+Website: https://opennotetaker.app/
+GitHub: https://github.com/opennotetaker/OpenNoteTaker

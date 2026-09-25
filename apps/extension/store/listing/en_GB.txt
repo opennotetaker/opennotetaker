@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: en_GB) =====
+Meeting Minutes
+Speaker Labels
+Whisper Transcription
+Voice to Text
+Export SRT Subtitles
+Call Summary Generator
+Transcription No Signup
+
+===== OVERVIEW (CHROME) (locale: en_GB) =====
+When you open a web meeting, OpenNoteTaker offers to record it, so you get a full transcript without a bot joining the call. Recording and transcription happen in the OpenNoteTaker web app, and the audio stays on your computer.
+
+FEATURES
+
+• Works with Google Meet, Zoom, Microsoft Teams and Tencent Meeting (VooV) in the browser
+• No bot joins the call, and nobody else has to install anything
+• Clear consent screen. Nothing is recorded until you press Start.
+• Records your microphone and the meeting's audio
+• Whisper transcription runs on your device
+• Load the page once online; after the model has been downloaded, transcription runs offline
+• Speaker labels, an on-device summary and search across meetings
+• Export to TXT, Markdown, SRT, VTT, CSV, HTML or JSON
+• Free to record, transcribe and export, with no account needed
+
+PRIVACY
+
+Meeting audio is processed on your device and never uploaded. The extension doesn't record anything, doesn't read your meeting's chat or content, and doesn't contact any server. It uses your tabs' web addresses to tell when a meeting page is open; on Teams and Tencent Meeting it also checks for a leave-call button to know you've joined the call. When you click Record, the tab title is passed to OpenNoteTaker as the meeting name.
+
+Optional AI minutes, Q&A and translation need an account and use credits.
+
+Website: https://opennotetaker.app/
+GitHub: https://github.com/opennotetaker/OpenNoteTaker
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: en_GB) =====
+When you open a web meeting, OpenNoteTaker offers to record it, so you get a full transcript without a bot joining the call. Recording and transcription happen in the OpenNoteTaker web app, and the audio stays on your computer.
+
+FEATURES
+
+• Works with Google Meet, Zoom, Microsoft Teams and Tencent Meeting (VooV) in the browser
+• No bot joins the call, and nobody else has to install anything
+• Clear consent screen. Nothing is recorded until you press Start.
+• Records your microphone and the meeting's audio
+• Whisper transcription runs on your device
+• Load the page once online; after the model has been downloaded, transcription runs offline
+• Speaker labels, an on-device summary and search across meetings
+• Export to TXT, Markdown, SRT, VTT, CSV, HTML or JSON
+• Free to record, transcribe and export, with no account needed
+
+PRIVACY
+
+Meeting audio is processed on your device and never uploaded. The extension doesn't record anything, doesn't read your meeting's chat or content, and doesn't contact any server. It uses your tabs' web addresses to tell when a meeting page is open; on Teams and Tencent Meeting it also checks for a leave-call button to know you've joined the call. When you click Record, the tab title is passed to OpenNoteTaker as the meeting name.
+
+Optional AI minutes, Q&A and translation need an account and use credits.
+
+Website: https://opennotetaker.app/
+GitHub: https://github.com/opennotetaker/OpenNoteTaker

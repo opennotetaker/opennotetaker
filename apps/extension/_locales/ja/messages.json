@@ -1,9 +1,9 @@
 {
   "name": {
-    "message": "OpenNoteTaker — 会議の検出"
+    "message": "会議録音・AIメモ - Zoom/Meet/Teams対応 | OpenNoteTaker"
   },
   "description": {
-    "message": "Google Meet、Zoom、Teams、VooV の会議に参加していることを検出し、OpenNoteTaker での録音を提案します。音声が端末から出ることはありません。"
+    "message": "Zoom・Google Meet・Teams・Tencent Meetingの会議を開くと、OpenNoteTakerが録音と文字起こしを提案。処理は端末内のWhisper AIで行われ、ボットは参加しません。"
   },
   "promptTitle": {
     "message": "$PLATFORM$ の会議中です",

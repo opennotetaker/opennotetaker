@@ -1,0 +1,8 @@
+{
+  "name": {
+    "message": "Registratore di riunioni e note IA per Zoom, Meet, Teams | OpenNoteTaker"
+  },
+  "description": {
+    "message": "Quando apri una chiamata Zoom, Meet, Teams o Tencent Meeting, OpenNoteTaker ti propone di registrarla e trascriverla con Whisper AI."
+  }
+}

@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: id) =====
+Transkrip Rapat
+Label Pembicara
+Transkripsi Whisper
+Suara ke Teks
+Ekspor SRT Subtitle
+Ringkasan Panggilan
+Transkripsi Tanpa Akun
+
+===== OVERVIEW (CHROME) (locale: id) =====
+Saat Anda membuka rapat online, OpenNoteTaker menawarkan untuk merekamnya, sehingga Anda mendapat transkrip lengkap tanpa bot yang ikut bergabung ke panggilan. Perekaman dan transkripsi dilakukan di aplikasi web OpenNoteTaker, dan audio tetap berada di komputer Anda.
+
+FITUR
+
+• Mendukung Google Meet, Zoom, Microsoft Teams, dan Tencent Meeting (VooV) di browser
+• Tidak ada bot yang bergabung ke panggilan, dan orang lain tidak perlu menginstal apa pun
+• Layar persetujuan yang jelas. Tidak ada yang direkam sampai Anda menekan Start.
+• Merekam mikrofon Anda dan audio rapat
+• Transkripsi Whisper berjalan di perangkat Anda
+• Buka halaman sekali saat online; setelah model terunduh, transkripsi berjalan secara offline
+• Label pembicara, ringkasan di perangkat, dan pencarian di semua rapat
+• Ekspor ke TXT, Markdown, SRT, VTT, CSV, HTML, atau JSON
+• Gratis untuk merekam, mentranskripsi, dan mengekspor, tanpa perlu akun
+
+PRIVASI
+
+Audio rapat diproses di perangkat Anda dan tidak pernah diunggah. Ekstensi ini tidak merekam apa pun, tidak membaca chat atau isi rapat Anda, dan tidak menghubungi server mana pun. Ekstensi ini memakai alamat web tab Anda untuk mengetahui kapan halaman rapat sedang terbuka; di Teams dan Tencent Meeting, ekstensi ini juga memeriksa tombol keluar dari panggilan untuk mengetahui bahwa Anda sudah bergabung. Saat Anda mengklik Record, judul tab dikirim ke OpenNoteTaker sebagai nama rapat.
+
+Notulen AI, tanya jawab, dan terjemahan opsional memerlukan akun dan menggunakan kredit.
+
+Situs web: https://opennotetaker.app/
+GitHub: https://github.com/opennotetaker/OpenNoteTaker
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: id) =====
+Saat Anda membuka rapat online, OpenNoteTaker menawarkan untuk merekamnya, sehingga Anda mendapat transkrip lengkap tanpa bot yang ikut bergabung ke panggilan. Perekaman dan transkripsi dilakukan di aplikasi web OpenNoteTaker, dan audio tetap berada di komputer Anda.
+
+FITUR
+
+• Mendukung Google Meet, Zoom, Microsoft Teams, dan Tencent Meeting (VooV) di browser
+• Tidak ada bot yang bergabung ke panggilan, dan orang lain tidak perlu menginstal apa pun
+• Layar persetujuan yang jelas. Tidak ada yang direkam sampai Anda menekan Start.
+• Merekam mikrofon Anda dan audio rapat
+• Transkripsi Whisper berjalan di perangkat Anda
+• Buka halaman sekali saat online; setelah model terunduh, transkripsi berjalan secara offline
+• Label pembicara, ringkasan di perangkat, dan pencarian di semua rapat
+• Ekspor ke TXT, Markdown, SRT, VTT, CSV, HTML, atau JSON
+• Gratis untuk merekam, mentranskripsi, dan mengekspor, tanpa perlu akun
+
+PRIVASI
+
+Audio rapat diproses di perangkat Anda dan tidak pernah diunggah. Ekstensi ini tidak merekam apa pun, tidak membaca chat atau isi rapat Anda, dan tidak menghubungi server mana pun. Ekstensi ini memakai alamat web tab Anda untuk mengetahui kapan halaman rapat sedang terbuka; di Teams dan Tencent Meeting, ekstensi ini juga memeriksa tombol keluar dari panggilan untuk mengetahui bahwa Anda sudah bergabung. Saat Anda mengklik Record, judul tab dikirim ke OpenNoteTaker sebagai nama rapat.
+
+Notulen AI, tanya jawab, dan terjemahan opsional memerlukan akun dan menggunakan kredit.
+
+Situs web: https://opennotetaker.app/
+GitHub: https://github.com/opennotetaker/OpenNoteTaker

@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: fr) =====
+Transcription de réunion
+Étiquettes des Intervenants
+Transcription Whisper
+Voix vers Texte
+Export SRT Sous-titres
+Compte-rendu d'Appel
+Transcrire sans Compte
+
+===== OVERVIEW (CHROME) (locale: fr) =====
+Quand vous ouvrez une réunion en ligne, OpenNoteTaker vous propose de l'enregistrer : vous obtenez une transcription complète sans qu'aucun bot ne rejoigne l'appel. L'enregistrement et la transcription se font dans l'application web OpenNoteTaker, et l'audio reste sur votre ordinateur.
+
+FONCTIONNALITÉS
+
+• Compatible avec Google Meet, Zoom, Microsoft Teams et Tencent Meeting (VooV) dans le navigateur
+• Aucun bot ne rejoint l'appel, et personne d'autre n'a besoin d'installer quoi que ce soit
+• Écran de consentement clair. Rien n'est enregistré avant que vous n'appuyiez sur Démarrer.
+• Enregistre votre microphone et l'audio de la réunion
+• La transcription Whisper s'exécute sur votre appareil
+• Ouvrez la page une première fois en ligne ; une fois le modèle téléchargé, la transcription fonctionne hors ligne
+• Étiquettes des intervenants, un résumé sur l'appareil et une recherche dans toutes les réunions
+• Exportez en TXT, Markdown, SRT, VTT, CSV, HTML ou JSON
+• Gratuit pour enregistrer, transcrire et exporter, sans compte requis
+
+CONFIDENTIALITÉ
+
+L'audio de la réunion est traité sur votre appareil et jamais téléversé. L'extension n'enregistre rien, ne lit ni le chat ni le contenu de vos réunions et ne contacte aucun serveur. Elle utilise les adresses web de vos onglets pour savoir quand une page de réunion est ouverte ; sur Teams et Tencent Meeting, elle vérifie aussi la présence d'un bouton pour quitter l'appel, afin de savoir que vous l'avez rejoint. Quand vous cliquez sur « Record », le titre de l'onglet est transmis à OpenNoteTaker comme nom de la réunion.
+
+Le compte rendu par IA, les questions-réponses et la traduction, optionnels, nécessitent un compte et consomment des crédits.
+
+Site web : https://opennotetaker.app/
+GitHub : https://github.com/opennotetaker/OpenNoteTaker
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: fr) =====
+Quand vous ouvrez une réunion en ligne, OpenNoteTaker vous propose de l'enregistrer : vous obtenez une transcription complète sans qu'aucun bot ne rejoigne l'appel. L'enregistrement et la transcription se font dans l'application web OpenNoteTaker, et l'audio reste sur votre ordinateur.
+
+FONCTIONNALITÉS
+
+• Compatible avec Google Meet, Zoom, Microsoft Teams et Tencent Meeting (VooV) dans le navigateur
+• Aucun bot ne rejoint l'appel, et personne d'autre n'a besoin d'installer quoi que ce soit
+• Écran de consentement clair. Rien n'est enregistré avant que vous n'appuyiez sur Démarrer.
+• Enregistre votre microphone et l'audio de la réunion
+• La transcription Whisper s'exécute sur votre appareil
+• Ouvrez la page une première fois en ligne ; une fois le modèle téléchargé, la transcription fonctionne hors ligne
+• Étiquettes des intervenants, un résumé sur l'appareil et une recherche dans toutes les réunions
+• Exportez en TXT, Markdown, SRT, VTT, CSV, HTML ou JSON
+• Gratuit pour enregistrer, transcrire et exporter, sans compte requis
+
+CONFIDENTIALITÉ
+
+L'audio de la réunion est traité sur votre appareil et jamais téléversé. L'extension n'enregistre rien, ne lit ni le chat ni le contenu de vos réunions et ne contacte aucun serveur. Elle utilise les adresses web de vos onglets pour savoir quand une page de réunion est ouverte ; sur Teams et Tencent Meeting, elle vérifie aussi la présence d'un bouton pour quitter l'appel, afin de savoir que vous l'avez rejoint. Quand vous cliquez sur « Record », le titre de l'onglet est transmis à OpenNoteTaker comme nom de la réunion.
+
+Le compte rendu par IA, les questions-réponses et la traduction, optionnels, nécessitent un compte et consomment des crédits.
+
+Site web : https://opennotetaker.app/
+GitHub : https://github.com/opennotetaker/OpenNoteTaker

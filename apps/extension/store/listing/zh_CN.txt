@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: zh_CN) =====
+会议转文字
+说话人标签
+Whisper转录
+语音转文字
+导出SRT字幕
+通话记录摘要
+免注册转录工具
+
+===== OVERVIEW (CHROME) (locale: zh_CN) =====
+当你打开网页会议时，OpenNoteTaker会询问你是否录音。无需机器人加入通话，你也能获得完整的会议转录。录音与转录都在OpenNoteTaker网页应用内完成，音频始终留在你自己的电脑上。
+
+功能
+
+• 支持浏览器中的Google Meet、Zoom、Microsoft Teams和腾讯会议（VooV）
+• 没有机器人加入通话，其他参会者也无需安装任何东西
+• 清晰的同意界面。在你点击"开始"之前，不会录制任何内容。
+• 录制你的麦克风和会议音频
+• Whisper转录在你的设备上本地运行
+• 首次需联网打开页面并下载模型，之后转录可在断网状态下进行
+• 说话人标签、设备端摘要，以及跨会议搜索
+• 支持导出为TXT、Markdown、SRT、VTT、CSV、HTML或JSON
+• 录音、转录和导出完全免费，无需注册账号
+
+隐私
+
+会议音频在你的设备上处理，绝不会被上传。该扩展不会录制任何内容，不读取会议里的聊天或内容，也不会连接任何服务器。它通过标签页的网址判断会议页面是否已打开；在Teams和腾讯会议中，还会查看页面上是否有"离开通话"按钮，以确认你已进入通话。当你点击"录制"时，标签页标题会作为会议名称传给OpenNoteTaker。
+
+可选的AI会议纪要、问答和翻译功能需要账号并消耗额度。
+
+官网：https://opennotetaker.app/
+GitHub: https://github.com/opennotetaker/OpenNoteTaker
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: zh_CN) =====
+当你打开网页会议时，OpenNoteTaker会询问你是否录音。无需机器人加入通话，你也能获得完整的会议转录。录音与转录都在OpenNoteTaker网页应用内完成，音频始终留在你自己的电脑上。
+
+功能
+
+• 支持浏览器中的Google Meet、Zoom、Microsoft Teams和腾讯会议（VooV）
+• 没有机器人加入通话，其他参会者也无需安装任何东西
+• 清晰的同意界面。在你点击"开始"之前，不会录制任何内容。
+• 录制你的麦克风和会议音频
+• Whisper转录在你的设备上本地运行
+• 首次需联网打开页面并下载模型，之后转录可在断网状态下进行
+• 说话人标签、设备端摘要，以及跨会议搜索
+• 支持导出为TXT、Markdown、SRT、VTT、CSV、HTML或JSON
+• 录音、转录和导出完全免费，无需注册账号
+
+隐私
+
+会议音频在你的设备上处理，绝不会被上传。该扩展不会录制任何内容，不读取会议里的聊天或内容，也不会连接任何服务器。它通过标签页的网址判断会议页面是否已打开；在Teams和腾讯会议中，还会查看页面上是否有"离开通话"按钮，以确认你已进入通话。当你点击"录制"时，标签页标题会作为会议名称传给OpenNoteTaker。
+
+可选的AI会议纪要、问答和翻译功能需要账号并消耗额度。
+
+官网：https://opennotetaker.app/
+GitHub: https://github.com/opennotetaker/OpenNoteTaker

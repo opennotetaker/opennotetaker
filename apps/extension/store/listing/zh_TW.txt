@@ -1,0 +1,56 @@
+===== EDGE SEARCH TERMS (locale: zh_TW) =====
+會議逐字稿
+說話者標籤
+Whisper逐字稿
+語音轉文字
+匯出SRT字幕
+通話記錄摘要
+免費轉錄
+
+===== OVERVIEW (CHROME) (locale: zh_TW) =====
+當你開啟網頁會議時，OpenNoteTaker會詢問你是否錄音。不需要機器人加入通話，你也能取得完整的逐字稿。錄音與轉錄都在OpenNoteTaker網頁應用程式內完成，音訊始終留在你自己的電腦上。
+
+功能
+
+• 支援瀏覽器中的Google Meet、Zoom、Microsoft Teams和騰訊會議（VooV）
+• 沒有機器人加入通話，其他參與者也不需要安裝任何東西
+• 清楚的同意畫面。在你按下「開始」之前，不會錄製任何內容。
+• 錄製你的麥克風和會議音訊
+• Whisper逐字稿在你的裝置上本機執行
+• 首次需連網開啟頁面並下載模型，之後可在離線狀態下轉錄
+• 說話者標籤、裝置端摘要，以及跨會議搜尋
+• 支援匯出為TXT、Markdown、SRT、VTT、CSV、HTML或JSON
+• 錄音、轉錄與匯出完全免費，不需要註冊帳號
+
+隱私
+
+會議音訊在你的裝置上處理，絕不會被上傳。此擴充功能不會錄製任何內容，不讀取會議中的聊天或內容，也不會連接任何伺服器。它透過分頁的網址判斷會議頁面是否已開啟；在Teams和騰訊會議中，還會查看頁面上是否有「離開通話」按鈕，以確認你已加入通話。當你點擊「錄製」時，分頁標題會作為會議名稱傳給OpenNoteTaker。
+
+選用的AI會議紀要、問答與翻譯功能需要帳號並消耗額度。
+
+官方網站：https://opennotetaker.app/
+GitHub: https://github.com/opennotetaker/OpenNoteTaker
+
+===== OVERVIEW (EDGE/FIREFOX) (locale: zh_TW) =====
+當你開啟網頁會議時，OpenNoteTaker會詢問你是否錄音。不需要機器人加入通話，你也能取得完整的逐字稿。錄音與轉錄都在OpenNoteTaker網頁應用程式內完成，音訊始終留在你自己的電腦上。
+
+功能
+
+• 支援瀏覽器中的Google Meet、Zoom、Microsoft Teams和騰訊會議（VooV）
+• 沒有機器人加入通話，其他參與者也不需要安裝任何東西
+• 清楚的同意畫面。在你按下「開始」之前，不會錄製任何內容。
+• 錄製你的麥克風和會議音訊
+• Whisper逐字稿在你的裝置上本機執行
+• 首次需連網開啟頁面並下載模型，之後可在離線狀態下轉錄
+• 說話者標籤、裝置端摘要，以及跨會議搜尋
+• 支援匯出為TXT、Markdown、SRT、VTT、CSV、HTML或JSON
+• 錄音、轉錄與匯出完全免費，不需要註冊帳號
+
+隱私
+
+會議音訊在你的裝置上處理，絕不會被上傳。此擴充功能不會錄製任何內容，不讀取會議中的聊天或內容，也不會連接任何伺服器。它透過分頁的網址判斷會議頁面是否已開啟；在Teams和騰訊會議中，還會查看頁面上是否有「離開通話」按鈕，以確認你已加入通話。當你點擊「錄製」時，分頁標題會作為會議名稱傳給OpenNoteTaker。
+
+選用的AI會議紀要、問答與翻譯功能需要帳號並消耗額度。
+
+官方網站：https://opennotetaker.app/
+GitHub: https://github.com/opennotetaker/OpenNoteTaker
