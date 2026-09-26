@@ -249,6 +249,46 @@ check(
 check("decoder debris never reaches the transcript", languageResult.cleaned === "你好 世界", languageResult.cleaned);
 check("a language name becomes the code Whisper knows", languageResult.code === "zh");
 check("and the code is shown back in the reader's script", languageResult.named === "中文");
+// APP-185: the wash sets --bg-page on .site-chrome, and the dark-mode guard
+// beside it read that same overridden value back, so it fired and changed
+// nothing: white type on lavender, about 1.1:1, and the headline was gone for
+// anyone whose system is dark. Nobody on a light desktop can see that, so it
+// is measured here rather than looked at.
+{
+  const dark = await browser.newContext({ colorScheme: "dark" });
+  const darkPage = await dark.newPage();
+  for (const path of ["", "privacy.html"]) {
+    await darkPage.goto(BASE + path);
+    await darkPage.waitForTimeout(400);
+    const seen = await darkPage.evaluate(() => {
+      const heading = document.querySelector(".site-chrome h1, .site-chrome h2, main h1, h1");
+      if (!heading) return null;
+      const luminance = (colour) => {
+        const [r, g, b] = colour.match(/[\d.]+/g).slice(0, 3).map(Number);
+        const channel = (c) => {
+          const v = c / 255;
+          return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+        };
+        return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+      };
+      let ground = "rgb(255, 255, 255)";
+      for (let el = heading; el && el !== document.documentElement; el = el.parentElement) {
+        const bg = getComputedStyle(el).backgroundColor;
+        if (bg && bg !== "rgba(0, 0, 0, 0)") { ground = bg; break; }
+      }
+      const ink = getComputedStyle(heading).color;
+      const [a, b] = [luminance(ink), luminance(ground)].sort((x, y) => y - x);
+      return { ink, ground, ratio: Math.round(((a + 0.05) / (b + 0.05)) * 10) / 10 };
+    });
+    check(
+      `the heading is readable in dark mode${path ? ` on /${path}` : ""}`,
+      seen !== null && seen.ratio >= 4.5,
+      JSON.stringify(seen),
+    );
+  }
+  await dark.close();
+}
+
 // APP-176: the footer's language row shares a class with the block of footer
 // columns above it, which is a five-column grid. As a lone grid item the nav
 // was pushed into the first column and its eight links fell onto three rows on
